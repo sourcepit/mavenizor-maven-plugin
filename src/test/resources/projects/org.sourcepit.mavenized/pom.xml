@@ -1,0 +1,65 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.sourcepit</groupId>
+	<artifactId>org.sourcepit.mavenized</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<packaging>eclipse-plugin</packaging>
+
+	<repositories>
+		<repository>
+			<id>indigo</id>
+			<layout>p2</layout>
+			<url>http://p2.sourcepit.org/eclipse/indigo/</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>0.14.1</version>
+				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<version>0.14.1</version>
+				<configuration>
+					<resolver>p2</resolver>
+					<!-- <dependency-resolution> -->
+					<!-- <extraRequirements> -->
+					<!-- <requirement> -->
+					<!-- <id>org.eclipse.platform</id> -->
+					<!-- <versionRange>0.0.0</versionRange> -->
+					<!-- <type>eclipse-feature</type> -->
+					<!-- </requirement> -->
+					<!-- </extraRequirements> -->
+					<!-- </dependency-resolution> -->
+					<environments>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86_64</arch>
+						</environment>
+					</environments>
+				</configuration>
+			</plugin>
+			<!-- <plugin> -->
+			<!-- <groupId>org.sourcepit</groupId> -->
+			<!-- <artifactId>mavenizor-maven-plugin</artifactId> -->
+			<!-- <version>0.1.0-SNAPSHOT</version> -->
+			<!-- <extensions>true</extensions> -->
+			<!-- <executions> -->
+			<!-- <execution> -->
+			<!-- <goals> -->
+			<!-- <goal>mavenize</goal> -->
+			<!-- </goals> -->
+			<!-- </execution> -->
+			<!-- </executions> -->
+			<!-- </plugin> -->
+		</plugins>
+	</build>
+</project>
