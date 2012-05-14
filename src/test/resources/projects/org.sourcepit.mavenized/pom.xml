@@ -7,11 +7,15 @@
 
 	<packaging>eclipse-plugin</packaging>
 
+	<properties>
+		<p2.indigo.url>http://p2.sourcepit.org/eclipse/indigo</p2.indigo.url>
+	</properties>
+
 	<repositories>
 		<repository>
 			<id>indigo</id>
 			<layout>p2</layout>
-			<url>http://p2.sourcepit.org/eclipse/indigo/</url>
+			<url>${p2.indigo.url}</url>
 		</repository>
 	</repositories>
 
