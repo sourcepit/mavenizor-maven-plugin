@@ -6,12 +6,9 @@
 
 package org.sourcepit.mavenizor;
 
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sourcepit.guplex.Guplex;
+import org.sourcepit.common.utils.lang.PipedException;
 
 /**
  * @requiresDependencyResolution compile
@@ -19,16 +16,13 @@ import org.sourcepit.guplex.Guplex;
  * @phase package
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
-public class MavenizorMojo extends AbstractMojo
+public class MavenizorMojo extends AbstractMavenizorMojo
 {
    private final static Logger LOG = LoggerFactory.getLogger(MavenizorMojo.class);
 
-   /** @component */
-   private Guplex guplex;
-
-   public void execute() throws MojoExecutionException, MojoFailureException
+   @Override
+   protected void doExecute() throws PipedException
    {
-      guplex.inject(this, true);
       LOG.info("Hello :-)");
    }
 }
