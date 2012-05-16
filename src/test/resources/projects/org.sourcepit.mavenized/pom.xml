@@ -5,7 +5,8 @@
 	<artifactId>org.sourcepit.mavenized</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
-	<packaging>eclipse-plugin</packaging>
+	<!-- <packaging>eclipse-plugin</packaging> -->
+	<packaging>pom</packaging>
 
 	<properties>
 		<p2.indigo.url>http://p2.sourcepit.org/eclipse/indigo</p2.indigo.url>
@@ -21,36 +22,36 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>0.14.1</version>
-				<extensions>true</extensions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>0.14.1</version>
-				<configuration>
-					<resolver>p2</resolver>
-					<!-- <dependency-resolution> -->
-					<!-- <extraRequirements> -->
-					<!-- <requirement> -->
-					<!-- <id>org.eclipse.platform</id> -->
-					<!-- <versionRange>0.0.0</versionRange> -->
-					<!-- <type>eclipse-feature</type> -->
-					<!-- </requirement> -->
-					<!-- </extraRequirements> -->
-					<!-- </dependency-resolution> -->
-					<environments>
-						<environment>
-							<os>win32</os>
-							<ws>win32</ws>
-							<arch>x86_64</arch>
-						</environment>
-					</environments>
-				</configuration>
-			</plugin>
+			<!-- <plugin> -->
+			<!-- <groupId>org.eclipse.tycho</groupId> -->
+			<!-- <artifactId>tycho-maven-plugin</artifactId> -->
+			<!-- <version>0.14.1</version> -->
+			<!-- <extensions>true</extensions> -->
+			<!-- </plugin> -->
+			<!-- <plugin> -->
+			<!-- <groupId>org.eclipse.tycho</groupId> -->
+			<!-- <artifactId>target-platform-configuration</artifactId> -->
+			<!-- <version>0.14.1</version> -->
+			<!-- <configuration> -->
+			<!-- <resolver>p2</resolver> -->
+			<!-- <dependency-resolution> -->
+			<!-- <extraRequirements> -->
+			<!-- <requirement> -->
+			<!-- <id>org.eclipse.platform</id> -->
+			<!-- <versionRange>0.0.0</versionRange> -->
+			<!-- <type>eclipse-feature</type> -->
+			<!-- </requirement> -->
+			<!-- </extraRequirements> -->
+			<!-- </dependency-resolution> -->
+			<!-- <environments> -->
+			<!-- <environment> -->
+			<!-- <os>win32</os> -->
+			<!-- <ws>win32</ws> -->
+			<!-- <arch>x86_64</arch> -->
+			<!-- </environment> -->
+			<!-- </environments> -->
+			<!-- </configuration> -->
+			<!-- </plugin> -->
 			<plugin>
 				<groupId>org.sourcepit</groupId>
 				<artifactId>mavenizor-maven-plugin</artifactId>
@@ -62,6 +63,9 @@
 						</goals>
 					</execution>
 				</executions>
+				<dependencies>
+
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
