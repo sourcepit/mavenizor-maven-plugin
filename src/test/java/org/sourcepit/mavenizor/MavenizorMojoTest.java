@@ -21,7 +21,6 @@ import org.codehaus.plexus.ContainerConfiguration;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.classworlds.realm.NoSuchRealmException;
-import org.eclipse.emf.common.util.EList;
 import org.junit.Test;
 import org.sourcepit.common.maven.environment.EnvironmentSnapshot;
 import org.sourcepit.common.maven.testing.EmbeddedMavenEnvironmentTest;
