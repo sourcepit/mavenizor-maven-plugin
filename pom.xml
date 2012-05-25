@@ -31,6 +31,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.sourcepit</groupId>
+			<artifactId>guice-plexus-bridge</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
 		</dependency>
@@ -46,11 +51,6 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-manifest</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.sourcepit</groupId>
-			<artifactId>guice-plexus-bridge</artifactId>
 			<version>0.1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>

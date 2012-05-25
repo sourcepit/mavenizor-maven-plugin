@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
@@ -49,8 +50,9 @@ public class MavenizorMojo extends AbstractMavenizorMojo
    private MavenSession session;
 
    @Inject
-   private BundleResolver bundleResolver;
-   
+   @Named("tycho-project")
+   private IBundleResolver bundleResolver;
+
    @Inject
    private Mavenizor mavenizor;
 
@@ -59,13 +61,13 @@ public class MavenizorMojo extends AbstractMavenizorMojo
    {
       logger.info("Hello :-)");
 
-      final OsgiStateBuilder stateBuilder = new OsgiStateBuilder();
+      final OsgiStateBuilder stateBuilder = new OsgiStateBuilder(TychoProjectUtils.class.getClassLoader());
       addPlatformProperties(session, stateBuilder);
       addBundles(stateBuilder);
 
       final State state = stateBuilder.getState();
       state.resolve(false);
-      
+
       mavenizor.mavenize(state);
 
       logger.info("awesome!");

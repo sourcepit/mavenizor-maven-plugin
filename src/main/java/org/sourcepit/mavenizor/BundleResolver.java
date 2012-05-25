@@ -31,12 +31,15 @@ import org.eclipse.tycho.core.resolver.shared.OptionalResolutionAction;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.sourcepit.common.utils.lang.Exceptions;
 
-@Named
-public class BundleResolver
+@Named("tycho-project")
+public class BundleResolver implements IBundleResolver
 {
    @Inject
    private DefaultTargetPlatformResolverFactory targetPlatformResolverLocator;
 
+   /**
+    * {@inheritDoc}
+    */
    public void resolve(final MavenSession session, final Handler handler)
    {
       final MavenProject project = session.getCurrentProject();
