@@ -51,7 +51,7 @@ public class MavenizorMojo extends AbstractMavenizorMojo
 
    @Inject
    @Named("tycho-project")
-   private IBundleResolver bundleResolver;
+   private BundleResolver bundleResolver;
 
    @Inject
    private Mavenizor mavenizor;
@@ -108,7 +108,7 @@ public class MavenizorMojo extends AbstractMavenizorMojo
 
    private void addBundles(final OsgiStateBuilder stateBuilder)
    {
-      bundleResolver.resolve(session, new BundleResolver.Handler()
+      bundleResolver.resolve(session, new TychoProjectBundleResolver.Handler()
       {
          public void resolved(File bundleLocation)
          {

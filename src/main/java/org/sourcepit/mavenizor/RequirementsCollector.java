@@ -6,13 +6,12 @@
 
 package org.sourcepit.mavenizor;
 
-import org.apache.maven.execution.MavenSession;
-import org.sourcepit.mavenizor.BundleResolver.Handler;
+import java.util.Collection;
+
+import org.eclipse.osgi.service.resolver.BundleDescription;
 
 
-public interface IBundleResolver
+public interface RequirementsCollector
 {
-
-   public abstract void resolve(final MavenSession session, final Handler handler);
-
+   Collection<Requirement> collectRequirements(BundleDescription bundle);
 }
