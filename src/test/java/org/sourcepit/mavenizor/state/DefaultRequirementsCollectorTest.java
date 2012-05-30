@@ -4,12 +4,11 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.state;
 
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -42,45 +41,29 @@ import org.sourcepit.common.manifest.osgi.resource.BundleManifestResourceImpl;
 import org.sourcepit.common.maven.testing.EmbeddedMavenEnvironmentTest;
 import org.sourcepit.common.testing.Environment;
 import org.sourcepit.common.utils.lang.Exceptions;
+import org.sourcepit.mavenizor.state.DefaultRequirementsCollector;
+import org.sourcepit.mavenizor.state.Requirement;
 
-public class RequirementsCollectorTest extends EmbeddedMavenEnvironmentTest
+public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTest
 {
    @Inject
-   private RequirementsCollector collector;
+   private DefaultRequirementsCollector collector;
 
    @Test
-   public void test()
+   public void testSelfReference()
    {
       final BundleManifest manifestA = createManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
+      addPackageImport(manifestA, "package.a", "[1,2)");
       save(manifestA);
 
-      BundleManifest manifestB = createManifest("b", "2");
-      addPackageImport(manifestB, "package.a", "[1,2)");
-      save(manifestB);
-
-      BundleManifest manifestC = createManifest("c", "3");
-      addBundleRequirement(manifestC, "b", "[2,3)");
-      save(manifestC);
-
-      final State state = createState(manifestA, manifestB, manifestC);
+      final State state = createState(manifestA);
       state.resolve(false);
 
       BundleDescription bundleA = getBundle(state, "a");
-      BundleDescription bundleB = getBundle(state, "b");
-      BundleDescription bundleC = getBundle(state, "c");
 
-      assertThat(bundleB.getResolvedRequires().length, Is.is(0));
-      ExportPackageDescription[] imports = bundleB.getResolvedImports();
-      assertThat(imports.length, Is.is(1));
-      ExportPackageDescription imported = imports[0];
-      assertThat(imported.getExporter(), IsEqual.equalTo(bundleA));
-
-      assertThat(bundleC.getResolvedImports().length, Is.is(0));
-      BundleDescription[] resolvedRequires = bundleC.getResolvedRequires();
-      assertThat(resolvedRequires.length, Is.is(1));
-      BundleDescription resolvedRequired = resolvedRequires[0];
-      assertThat(resolvedRequired, IsEqual.equalTo(bundleB));
+      Collection<Requirement> requirements = collector.collectRequirements(bundleA);
+      assertThat(requirements.size(), Is.is(0));
    }
 
    @Test
@@ -487,55 +470,6 @@ public class RequirementsCollectorTest extends EmbeddedMavenEnvironmentTest
       manifest.setBundleVersion(version);
       return manifest;
    }
-
-   public static BundleDescription[] getDependentBundles(BundleDescription root)
-   {
-      if (root == null)
-         return new BundleDescription[0];
-      BundleDescription[] imported = getImportedBundles(root);
-      BundleDescription[] required = getRequiredBundles(root);
-      BundleDescription[] dependents = new BundleDescription[imported.length + required.length];
-      System.arraycopy(imported, 0, dependents, 0, imported.length);
-      System.arraycopy(required, 0, dependents, imported.length, required.length);
-      return dependents;
-   }
-
-   public static BundleDescription[] getImportedBundles(BundleDescription root)
-   {
-      if (root == null)
-         return new BundleDescription[0];
-      ExportPackageDescription[] packages = getResolvedImports(root);
-      ArrayList<BundleDescription> resolvedImports = new ArrayList<BundleDescription>(packages.length);
-      for (int i = 0; i < packages.length; i++)
-      {
-         resolvedImports.add(packages[i].getExporter());
-      }
-      return (BundleDescription[]) resolvedImports.toArray(new BundleDescription[resolvedImports.size()]);
-   }
-
-   public static ExportPackageDescription[] getResolvedImports(BundleDescription root)
-   {
-      ExportPackageDescription[] packages = root.getResolvedImports();
-      ArrayList<ExportPackageDescription> resolvedImports = new ArrayList<ExportPackageDescription>(packages.length);
-      for (int i = 0; i < packages.length; i++)
-      {
-         if (!root.getLocation().equals(packages[i].getExporter().getLocation())
-            && !resolvedImports.contains(packages[i].getExporter()))
-         {
-
-            resolvedImports.add(packages[i]);
-         }
-      }
-      return (ExportPackageDescription[]) resolvedImports.toArray(new ExportPackageDescription[resolvedImports.size()]);
-   }
-
-   public static BundleDescription[] getRequiredBundles(BundleDescription root)
-   {
-      if (root == null)
-         return new BundleDescription[0];
-      return root.getResolvedRequires();
-   }
-
 
    private static BundleDescription getBundle(State state, String symbolicName)
    {

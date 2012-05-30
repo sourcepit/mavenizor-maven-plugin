@@ -4,14 +4,17 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.maven;
 
 import java.util.Collection;
+import java.util.List;
 
+import org.apache.maven.model.Dependency;
 import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.sourcepit.mavenizor.maven.converter.Converter;
 
-
-public interface RequirementsCollector
+public interface ArtifactDescriptorsStrategy
 {
-   Collection<Requirement> collectRequirements(BundleDescription bundle);
+   Collection<ArtifactDescriptor> determineArtifactDescriptors(BundleDescription bundle,
+      final List<Dependency> dependencies, Converter converter);
 }

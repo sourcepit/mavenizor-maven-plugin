@@ -4,7 +4,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.maven.tycho;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import org.eclipse.tycho.core.resolver.DefaultTargetPlatformResolverFactory;
 import org.eclipse.tycho.core.resolver.shared.OptionalResolutionAction;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.sourcepit.common.utils.lang.Exceptions;
+import org.sourcepit.mavenizor.maven.BundleResolver;
 
 @Named("tycho-project")
 public class TychoProjectBundleResolver implements BundleResolver
@@ -37,9 +38,6 @@ public class TychoProjectBundleResolver implements BundleResolver
    @Inject
    private DefaultTargetPlatformResolverFactory targetPlatformResolverLocator;
 
-   /**
-    * {@inheritDoc}
-    */
    public void resolve(final MavenSession session, final Handler handler)
    {
       final MavenProject project = session.getCurrentProject();

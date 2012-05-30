@@ -4,10 +4,9 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.maven.converter;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
-import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 
 public interface Converter
@@ -16,9 +15,7 @@ public interface Converter
 
    String deriveArtifactId(BundleDescription bundle);
 
-   String deriveVersion(BundleDescription bundle);
+   String deriveMavenVersion(BundleDescription bundle);
 
-   String toMavenVersion(Version version);
-
-   String toMavenVersionRange(VersionRange versionRange);
+   String deriveMavenVersionRange(BundleDescription bundle, VersionRange versionRange);
 }

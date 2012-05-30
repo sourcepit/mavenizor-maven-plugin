@@ -4,15 +4,13 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.maven;
 
 import org.apache.maven.execution.MavenSession;
-import org.sourcepit.mavenizor.TychoProjectBundleResolver.Handler;
+import org.sourcepit.mavenizor.maven.tycho.TychoProjectBundleResolver.Handler;
 
 
 public interface BundleResolver
 {
-
-   public abstract void resolve(final MavenSession session, final Handler handler);
-
+   void resolve(final MavenSession session, final Handler handler);
 }

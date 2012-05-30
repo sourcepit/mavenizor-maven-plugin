@@ -4,7 +4,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.state;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +28,7 @@ public class DefaultRequirementsCollector implements RequirementsCollector
       final Map<BundleDescription, Requirement> requirements = new LinkedHashMap<BundleDescription, Requirement>();
       collectRequirementsByBundleRequirements(bundle, requirements);
       collectRequirementsByPackageImports(bundle, requirements);
+      requirements.remove(bundle); // remove self reference
       return requirements.values();
    }
 

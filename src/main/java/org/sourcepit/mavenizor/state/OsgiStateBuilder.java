@@ -4,7 +4,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.state;
 
 import static org.sourcepit.common.utils.io.IOResources.buffIn;
 import static org.sourcepit.common.utils.io.IOResources.cpIn;

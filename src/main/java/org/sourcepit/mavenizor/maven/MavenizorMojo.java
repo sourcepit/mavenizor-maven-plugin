@@ -4,9 +4,10 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor;
+package org.sourcepit.mavenizor.maven;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,6 +24,11 @@ import org.eclipse.tycho.core.TargetPlatformConfiguration;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.slf4j.Logger;
 import org.sourcepit.common.utils.lang.PipedException;
+import org.sourcepit.mavenizor.Mavenizor;
+import org.sourcepit.mavenizor.Mavenizor.Result;
+import org.sourcepit.mavenizor.maven.converter.ConverterFactory;
+import org.sourcepit.mavenizor.maven.tycho.TychoProjectBundleResolver;
+import org.sourcepit.mavenizor.state.OsgiStateBuilder;
 
 /**
  * @requiresDependencyResolution compile
@@ -56,6 +62,9 @@ public class MavenizorMojo extends AbstractMavenizorMojo
    @Inject
    private Mavenizor mavenizor;
 
+   @Inject
+   private ConverterFactory converterFactory;
+
    @Override
    protected void doExecute() throws PipedException
    {
@@ -68,7 +77,11 @@ public class MavenizorMojo extends AbstractMavenizorMojo
       final State state = stateBuilder.getState();
       state.resolve(false);
 
-      mavenizor.mavenize(state);
+      final Mavenizor.Request request = new Mavenizor.Request();
+      request.setState(state);
+      request.setConverter(converterFactory.newConverter(new ConverterFactory.Request()));
+
+      final Mavenizor.Result result = mavenizor.mavenize(request);
 
       logger.info("awesome!");
    }
