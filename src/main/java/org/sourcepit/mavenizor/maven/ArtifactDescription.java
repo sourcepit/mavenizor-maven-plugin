@@ -12,9 +12,12 @@ import java.util.Map;
 
 import org.apache.maven.model.Model;
 
-public class ArtifactDescriptor
+public class ArtifactDescription
 {
+   private boolean deploy = true;
    private Model model;
+   private String classifier;
+   private String type = "jar";
    private File file;
    private Map<String, File> classifierToFile = new LinkedHashMap<String, File>();
 
@@ -26,6 +29,36 @@ public class ArtifactDescriptor
    public void setModel(Model model)
    {
       this.model = model;
+   }
+
+   public boolean isDeploy()
+   {
+      return deploy;
+   }
+
+   public void setDeploy(boolean deploy)
+   {
+      this.deploy = deploy;
+   }
+
+   public String getClassifier()
+   {
+      return classifier;
+   }
+
+   public void setClassifier(String classifier)
+   {
+      this.classifier = classifier;
+   }
+
+   public String getType()
+   {
+      return type;
+   }
+
+   public void setType(String type)
+   {
+      this.type = type;
    }
 
    public File getFile()

@@ -29,7 +29,7 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       {
          e.adaptAndThrow(MojoExecutionException.class);
          e.adaptAndThrow(MojoFailureException.class);
-         throw new MojoExecutionException(e.getCause().getMessage(), e);
+         throw new MojoExecutionException(e.getCause().getMessage(), e.getCause());
       }
    }
 

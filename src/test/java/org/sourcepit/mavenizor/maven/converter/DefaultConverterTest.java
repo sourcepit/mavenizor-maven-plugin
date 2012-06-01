@@ -20,21 +20,21 @@ import org.junit.Test;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.guplex.test.GuplexTest;
-import org.sourcepit.mavenizor.maven.converter.Converter;
-import org.sourcepit.mavenizor.maven.converter.ConverterFactory;
-import org.sourcepit.mavenizor.maven.converter.DefaultConverterFactory;
-import org.sourcepit.mavenizor.maven.converter.ConverterFactory.Request;
-import org.sourcepit.mavenizor.maven.converter.ConverterFactory.SnapshotRule;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
+import org.sourcepit.mavenizor.maven.converter.DefaultGAVStrategyFactory;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.Request;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
 public class DefaultConverterTest extends GuplexTest
 {
    @Inject
-   private DefaultConverterFactory factory;
+   private DefaultGAVStrategyFactory factory;
 
    @Test
    public void testDeriveGroupId()
    {
-      final Converter converter = factory.newConverter(new ConverterFactory.Request());
+      final GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
       try
       {
          converter.deriveGroupId((BundleDescription) null);
@@ -94,7 +94,7 @@ public class DefaultConverterTest extends GuplexTest
    @Test
    public void testDeriveArtifactId()
    {
-      final Converter converter = factory.newConverter(new ConverterFactory.Request());
+      final GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
       try
       {
          converter.deriveArtifactId((BundleDescription) null);
@@ -142,7 +142,7 @@ public class DefaultConverterTest extends GuplexTest
    @Test
    public void testDeriveMavenVersion()
    {
-      Converter converter = factory.newConverter(new ConverterFactory.Request());
+      GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
       try
       {
          converter.deriveMavenVersion(null);
@@ -174,13 +174,13 @@ public class DefaultConverterTest extends GuplexTest
    {
       final Request defaultRequest = new Request();
 
-      Converter converter = factory.newConverter(defaultRequest);
+      GAVStrategy converter = factory.newGAVStrategy(defaultRequest);
 
       BundleDescription bundle = newBundleDescription("foo", "1");
       String mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0"));
 
-      final ConverterFactory.Request customRequest = new ConverterFactory.Request();
+      final GAVStrategyFactory.Request customRequest = new GAVStrategyFactory.Request();
       customRequest.getAdditionalSnapshotRules().add(new SnapshotRule()
       {
          public boolean isSnapshotVersion(BundleDescription bundle, Version version)
@@ -189,7 +189,7 @@ public class DefaultConverterTest extends GuplexTest
          }
       });
 
-      converter = factory.newConverter(customRequest);
+      converter = factory.newGAVStrategy(customRequest);
 
       bundle = newBundleDescription("foo", "1");
       mavenVersion = converter.deriveMavenVersion(bundle);
@@ -199,7 +199,7 @@ public class DefaultConverterTest extends GuplexTest
    @Test
    public void testDisableDefaulSnapshotRules()
    {
-      Converter converter = factory.newConverter(new ConverterFactory.Request());
+      GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
 
       BundleDescription bundle = newBundleDescription("foo", "1.0.0.qualifier");
       String mavenVersion = converter.deriveMavenVersion(bundle);
@@ -208,7 +208,7 @@ public class DefaultConverterTest extends GuplexTest
       final Request request = new Request();
       request.setUseDefaultSnapshotRules(false);
 
-      converter = factory.newConverter(request);
+      converter = factory.newGAVStrategy(request);
 
       bundle = newBundleDescription("foo", "1.0.0.qualifier");
       mavenVersion = converter.deriveMavenVersion(bundle);
@@ -218,7 +218,7 @@ public class DefaultConverterTest extends GuplexTest
    @Test
    public void testDeriveMavenVersionRange()
    {
-      Converter converter = factory.newConverter(new ConverterFactory.Request());
+      GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
       try
       {
          converter.deriveMavenVersionRange(null, null);

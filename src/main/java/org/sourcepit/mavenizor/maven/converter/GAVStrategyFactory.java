@@ -13,7 +13,7 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.Version;
 
-public interface ConverterFactory
+public interface GAVStrategyFactory
 {
    interface SnapshotRule
    {
@@ -61,5 +61,5 @@ public interface ConverterFactory
       }
    }
 
-   Converter newConverter(Request request);
+   GAVStrategy newGAVStrategy(Request request);
 }

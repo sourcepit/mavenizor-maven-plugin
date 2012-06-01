@@ -14,9 +14,10 @@ import java.util.Map;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
-import org.sourcepit.mavenizor.maven.ArtifactDescriptor;
-import org.sourcepit.mavenizor.maven.ArtifactDescriptorsStrategy;
-import org.sourcepit.mavenizor.maven.converter.Converter;
+import org.sourcepit.common.utils.props.LinkedPropertiesMap;
+import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.mavenizor.maven.ArtifactDescription;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 
 public interface Mavenizor
 {
@@ -24,8 +25,8 @@ public interface Mavenizor
    {
       private State state;
       private BundleFilter inputFilter;
-      private Converter converter;
-      private ArtifactDescriptorsStrategy artifactDescriptorsStrategy;
+      private GAVStrategy gavStrategy;
+      private PropertiesMap options = new LinkedPropertiesMap();
 
       public State getState()
       {
@@ -47,38 +48,39 @@ public interface Mavenizor
          this.inputFilter = inputFilter;
       }
 
-      public Converter getConverter()
+      public GAVStrategy getGAVStrategy()
       {
-         return converter;
+         return gavStrategy;
       }
 
-      public void setConverter(Converter converter)
+      public void setGAVStrategy(GAVStrategy gavStrategy)
       {
-         this.converter = converter;
+         this.gavStrategy = gavStrategy;
       }
 
-      public ArtifactDescriptorsStrategy getArtifactDescriptorsStrategy()
+      public PropertiesMap getOptions()
       {
-         return artifactDescriptorsStrategy;
-      }
-
-      public void setArtifactDescriptorsStrategy(ArtifactDescriptorsStrategy deploymentDescriptorsStrategy)
-      {
-         this.artifactDescriptorsStrategy = deploymentDescriptorsStrategy;
+         return options;
       }
    }
 
    class Result
    {
       private final List<BundleDescription> inputBundles = new ArrayList<BundleDescription>();
-      private final Map<BundleDescription, Collection<ArtifactDescriptor>> artifactDescriptors = new HashMap<BundleDescription, Collection<ArtifactDescriptor>>();
+      private final List<BundleDescription> sourceBundles = new ArrayList<BundleDescription>();
+      private final Map<BundleDescription, Collection<ArtifactDescription>> artifactDescriptors = new HashMap<BundleDescription, Collection<ArtifactDescription>>();
 
       public List<BundleDescription> getInputBundles()
       {
          return inputBundles;
       }
 
-      public Map<BundleDescription, Collection<ArtifactDescriptor>> getArtifactDescriptors()
+      public List<BundleDescription> getSourceBundles()
+      {
+         return sourceBundles;
+      }
+
+      public Map<BundleDescription, Collection<ArtifactDescription>> getArtifactDescriptors()
       {
          return artifactDescriptors;
       }

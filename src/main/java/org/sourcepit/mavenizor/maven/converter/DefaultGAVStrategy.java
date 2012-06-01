@@ -16,9 +16,9 @@ import javax.validation.constraints.Size;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
-import org.sourcepit.mavenizor.maven.converter.ConverterFactory.SnapshotRule;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
-public class DefaultConverter implements Converter
+public class DefaultGAVStrategy implements GAVStrategy
 {
    private static final Pattern GROUP_2_PATTERN = Pattern.compile("^(\\w*\\.\\w*)(\\..*)?$");
    private static final Pattern GROUP_3_PATTERN = Pattern.compile("^(\\w*\\.\\w*\\.\\w*)(\\..*)?$");
@@ -27,7 +27,7 @@ public class DefaultConverter implements Converter
 
    private final List<SnapshotRule> snapshotRules;
 
-   public DefaultConverter(@NotNull List<SnapshotRule> snapshotRules)
+   public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules)
    {
       this.snapshotRules = snapshotRules;
    }

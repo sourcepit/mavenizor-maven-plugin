@@ -6,6 +6,7 @@
 
 package org.sourcepit.mavenizor;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,12 +19,17 @@ import org.apache.maven.model.Model;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
 import org.slf4j.Logger;
+import org.sourcepit.common.manifest.osgi.BundleManifest;
+import org.sourcepit.common.manifest.osgi.BundleSymbolicName;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
-import org.sourcepit.mavenizor.maven.ArtifactDescriptor;
-import org.sourcepit.mavenizor.maven.ArtifactDescriptorsStrategy;
-import org.sourcepit.mavenizor.maven.DefaultArtifactDescriptorsStrategy;
-import org.sourcepit.mavenizor.maven.converter.Converter;
+import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParser;
+import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParserImpl;
+import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.mavenizor.maven.ArtifactDescription;
+import org.sourcepit.mavenizor.maven.BundleConverter;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
+import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 import org.sourcepit.mavenizor.state.Requirement;
 import org.sourcepit.mavenizor.state.RequirementsCollector;
 
@@ -36,6 +42,9 @@ public class DefaultMavenizor implements Mavenizor
    @Inject
    private RequirementsCollector requirementsCollector;
 
+   @Inject
+   private BundleConverter bundleConverter;
+
    public Result mavenize(Request request)
    {
       final State state = request.getState();
@@ -43,11 +52,9 @@ public class DefaultMavenizor implements Mavenizor
       final BundleFilter inputFilter = request.getInputFilter() == null ? BundleFilter.ACCEPT_ALL : request
          .getInputFilter();
 
-      final Converter converter = request.getConverter();
+      final GAVStrategy gavStrategy = request.getGAVStrategy();
 
-      final ArtifactDescriptorsStrategy descriptorsStrategy = request.getArtifactDescriptorsStrategy() == null
-         ? new DefaultArtifactDescriptorsStrategy()
-         : request.getArtifactDescriptorsStrategy();
+      final PropertiesMap options = request.getOptions();
 
       final Result result = new Result();
 
@@ -55,44 +62,55 @@ public class DefaultMavenizor implements Mavenizor
       {
          if (inputFilter.accept(bundle))
          {
-            log.info(bundle.toString());
             result.getInputBundles().add(bundle);
-            mavenize(bundle, descriptorsStrategy, converter, result);
+            mavenize(bundle, gavStrategy, options, result);
          }
       }
+
+      processSourceBundles(state, result);
 
       return result;
    }
 
-   private void mavenize(BundleDescription bundle, ArtifactDescriptorsStrategy descriptorsStrategy,
-      Converter converter, Result result)
+   private void mavenize(BundleDescription bundle, GAVStrategy converter, PropertiesMap options, Result result)
    {
-      final List<Dependency> dependencies = new ArrayList<Dependency>();
-
-      processDependenciesRecursive(bundle, descriptorsStrategy, converter, dependencies, result);
-
-      final Collection<ArtifactDescriptor> descriptors = descriptorsStrategy.determineArtifactDescriptors(bundle,
-         dependencies, converter);
-
-      result.getArtifactDescriptors().put(bundle, descriptors);
+      if (isEclipseSourceBundle(bundle))
+      {
+         result.getSourceBundles().add(bundle);
+      }
+      else
+      {
+         log.info("Mavenizing " + bundle);
+         final List<Dependency> dependencies = new ArrayList<Dependency>();
+         processDependenciesRecursive(bundle, converter, dependencies, options, result);
+         final Collection<ArtifactDescription> descriptors = bundleConverter.toMavenArtifacts(bundle, dependencies,
+            converter, options);
+         result.getArtifactDescriptors().put(bundle, descriptors);
+      }
    }
 
-   private void processDependenciesRecursive(BundleDescription bundle, ArtifactDescriptorsStrategy descriptorsStrategy,
-      Converter converter, List<Dependency> dependencies, Result result)
+   private boolean isEclipseSourceBundle(BundleDescription bundle)
+   {
+      final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
+      return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
+   }
+
+   private void processDependenciesRecursive(BundleDescription bundle, GAVStrategy converter,
+      List<Dependency> dependencies, PropertiesMap options, Result result)
    {
       final Collection<Requirement> requirements = requirementsCollector.collectRequirements(bundle);
       for (Requirement requirement : requirements)
       {
          final BundleDescription requiredBundle = requirement.getTo();
 
-         Collection<ArtifactDescriptor> descriptors = result.getArtifactDescriptors().get(requiredBundle);
+         Collection<ArtifactDescription> descriptors = result.getArtifactDescriptors().get(requiredBundle);
          if (descriptors == null)
          {
-            mavenize(requiredBundle, descriptorsStrategy, converter, result);
+            mavenize(requiredBundle, converter, options, result);
             descriptors = result.getArtifactDescriptors().get(requiredBundle);
          }
 
-         for (ArtifactDescriptor descriptor : descriptors)
+         for (ArtifactDescription descriptor : descriptors)
          {
             final Model model = descriptor.getModel();
 
@@ -112,6 +130,42 @@ public class DefaultMavenizor implements Mavenizor
             dependency.setVersion(converter.deriveMavenVersionRange(requiredBundle, versionRange));
 
             dependencies.add(dependency);
+         }
+      }
+   }
+
+   private void processSourceBundles(final State state, final Result result)
+   {
+      for (BundleDescription sourceBundle : result.getSourceBundles())
+      {
+         final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, BundleManifest.class);
+
+         final BundleHeaderParser parser = new BundleHeaderParserImpl();
+
+         final BundleSymbolicName symbolicName = parser.parseBundleSymbolicName(manifest
+            .getHeaderValue("Eclipse-SourceBundle"));
+
+         final String hostBundleName = symbolicName.getSymbolicName();
+         final String version = symbolicName.getParameterValue("version");
+
+         final BundleDescription hostBundle = state.getBundle(hostBundleName, new org.osgi.framework.Version(version));
+         if (hostBundle == null)
+         {
+            log.warn("Skipping source bundle " + sourceBundle + ". Unable to find target " + hostBundleName + "_"
+               + version);
+         }
+         else
+         {
+            final Collection<ArtifactDescription> descriptors = result.getArtifactDescriptors().get(hostBundle);
+            if (descriptors != null && !descriptors.isEmpty())
+            {
+               final File sourceJar = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, File.class);
+               log.info("Attaching source " + sourceBundle + " to " + hostBundleName + "_" + version);
+               for (ArtifactDescription artifactDescriptor : descriptors)
+               {
+                  artifactDescriptor.getClassifierToFile().put("sources", sourceJar);
+               }
+            }
          }
       }
    }

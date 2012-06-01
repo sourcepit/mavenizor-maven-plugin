@@ -13,16 +13,16 @@ import java.util.List;
 import javax.inject.Named;
 
 @Named
-public class DefaultConverterFactory implements ConverterFactory
+public class DefaultGAVStrategyFactory implements GAVStrategyFactory
 {
-   public Converter newConverter(Request request)
+   public GAVStrategy newGAVStrategy(Request request)
    {
       final List<SnapshotRule> snapshotRules = new ArrayList<SnapshotRule>();
       if (request.isUseDefaultSnapshotRules())
       {
-         Collections.addAll(snapshotRules, ConverterFactory.DEFAULT_SNAPSHOT_RULES);
+         Collections.addAll(snapshotRules, GAVStrategyFactory.DEFAULT_SNAPSHOT_RULES);
       }
       snapshotRules.addAll(request.getAdditionalSnapshotRules());
-      return new DefaultConverter(snapshotRules);
+      return new DefaultGAVStrategy(snapshotRules);
    }
 }

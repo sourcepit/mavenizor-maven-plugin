@@ -7,14 +7,14 @@
 package org.sourcepit.mavenizor.maven;
 
 import java.io.File;
-import java.util.Collection;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
@@ -23,12 +23,18 @@ import org.eclipse.tycho.core.TargetEnvironment;
 import org.eclipse.tycho.core.TargetPlatformConfiguration;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.slf4j.Logger;
+import org.sonatype.guice.bean.locators.MutableBeanLocator;
+import org.sonatype.inject.BeanEntry;
 import org.sourcepit.common.utils.lang.PipedException;
 import org.sourcepit.mavenizor.Mavenizor;
 import org.sourcepit.mavenizor.Mavenizor.Result;
-import org.sourcepit.mavenizor.maven.converter.ConverterFactory;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
 import org.sourcepit.mavenizor.maven.tycho.TychoProjectBundleResolver;
 import org.sourcepit.mavenizor.state.OsgiStateBuilder;
+
+import com.google.inject.Key;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
 /**
  * @requiresDependencyResolution compile
@@ -50,10 +56,16 @@ public class MavenizorMojo extends AbstractMavenizorMojo
    }
 
    @Inject
-   private Logger logger;
+   protected Logger logger;
 
    /** @parameter expression="${session}" */
    private MavenSession session;
+
+   /** @parameter */
+   private Map<String, String> options;
+
+   /** @parameter expression="${project.build.directory}/mavenize" */
+   protected File work;
 
    @Inject
    @Named("tycho-project")
@@ -63,7 +75,10 @@ public class MavenizorMojo extends AbstractMavenizorMojo
    private Mavenizor mavenizor;
 
    @Inject
-   private ConverterFactory converterFactory;
+   private GAVStrategyFactory gavStrategyFactory;
+
+   @Inject
+   private MutableBeanLocator locator;
 
    @Override
    protected void doExecute() throws PipedException
@@ -78,12 +93,57 @@ public class MavenizorMojo extends AbstractMavenizorMojo
       state.resolve(false);
 
       final Mavenizor.Request request = new Mavenizor.Request();
+      populateDefaults(request);
+      if (options != null)
+      {
+         request.getOptions().putAll(options);
+      }
       request.setState(state);
-      request.setConverter(converterFactory.newConverter(new ConverterFactory.Request()));
+      request.setGAVStrategy(gavStrategyFactory.newGAVStrategy(new GAVStrategyFactory.Request()));
 
       final Mavenizor.Result result = mavenizor.mavenize(request);
 
+      postProcess(result);
+
       logger.info("awesome!");
+   }
+
+   private void populateDefaults(final Mavenizor.Request request)
+   {
+      request.getOptions().put("workingDir", work.getAbsolutePath());
+      request.getOptions().setBoolean("unwrapEmbeddedLibraries", true);
+   }
+
+   @SuppressWarnings({ "unchecked", "rawtypes" })
+   private BundleConverter locateArtifactDescriptorsStrategy(String name)
+   {
+      final Key<BundleConverter> key;
+
+      // final Named bindingName;
+      if (name == null || "ignore".equals(name))
+      {
+         // bindingName = Names.named(DefaultArtifactDescriptorsStrategy.class.getName());
+         key = (Key) Key.get(DefaultBundleConverter.class);
+      }
+      else
+      {
+         key = Key.get(BundleConverter.class, Names.named(name));
+      }
+
+
+      final Iterator<BeanEntry<Annotation, BundleConverter>> iterator = locator.locate(key).iterator();
+      while (iterator.hasNext())
+      {
+         final BeanEntry<Annotation, ? extends BundleConverter> beanEntry = (BeanEntry<Annotation, ? extends BundleConverter>) iterator
+            .next();
+         return beanEntry.getValue();
+      }
+
+      return null;
+   }
+
+   protected void postProcess(Result result)
+   {
    }
 
    private void addPlatformProperties(final MavenSession session, final OsgiStateBuilder stateBuilder)

@@ -41,6 +41,11 @@
 								<versionRange>0.0.0</versionRange>
 								<type>eclipse-feature</type>
 							</requirement>
+							<requirement>
+								<id>org.eclipse.platform.source</id>
+								<versionRange>0.0.0</versionRange>
+								<type>eclipse-feature</type>
+							</requirement>
 						</extraRequirements>
 					</dependency-resolution>
 					<environments>
@@ -58,9 +63,13 @@
 				<version>0.1.0-SNAPSHOT</version>
 				<executions>
 					<execution>
+						<phase>package</phase>
 						<goals>
-							<goal>mavenize</goal>
+							<goal>install-bundles</goal>
 						</goals>
+						<configuration>
+							<embeddedJars>unwrap</embeddedJars>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

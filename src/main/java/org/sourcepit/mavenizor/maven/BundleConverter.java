@@ -11,10 +11,11 @@ import java.util.List;
 
 import org.apache.maven.model.Dependency;
 import org.eclipse.osgi.service.resolver.BundleDescription;
-import org.sourcepit.mavenizor.maven.converter.Converter;
+import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 
-public interface ArtifactDescriptorsStrategy
+public interface BundleConverter
 {
-   Collection<ArtifactDescriptor> determineArtifactDescriptors(BundleDescription bundle,
-      final List<Dependency> dependencies, Converter converter);
+   Collection<ArtifactDescription> toMavenArtifacts(BundleDescription bundle, final List<Dependency> dependencies,
+      GAVStrategy converter, PropertiesMap options);
 }

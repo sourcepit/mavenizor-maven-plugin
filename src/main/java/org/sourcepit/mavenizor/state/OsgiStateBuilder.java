@@ -6,10 +6,8 @@
 
 package org.sourcepit.mavenizor.state;
 
-import static org.sourcepit.common.utils.io.IOResources.buffIn;
 import static org.sourcepit.common.utils.io.IOResources.cpIn;
-import static org.sourcepit.common.utils.io.IOResources.fileIn;
-import static org.sourcepit.common.utils.io.IOResources.zipIn;
+import static org.sourcepit.common.utils.io.IOResources.osgiIn;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +15,10 @@ import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -30,8 +28,8 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.manifest.osgi.resource.BundleManifestResourceImpl;
+import org.sourcepit.common.utils.adapt.Adapters;
 import org.sourcepit.common.utils.io.IOOperation;
-import org.sourcepit.common.utils.io.IOResource;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.props.PropertiesUtils;
 
@@ -77,15 +75,20 @@ public class OsgiStateBuilder
 
    private BundleDescription createBundle(File location)
    {
-      final Dictionary<String, String> headers = toDictionary(readManifest(location));
+      final BundleManifest manifest = readManifest(location);
+      final Dictionary<String, String> headers = toDictionary(manifest);
+      final BundleDescription bundle;
       try
       {
-         return stateFactory.createBundleDescription(state, headers, location.getAbsolutePath(), currentId++);
+         bundle = stateFactory.createBundleDescription(state, headers, location.getAbsolutePath(), currentId++);
       }
       catch (BundleException e)
       {
          throw Exceptions.pipe(e);
       }
+      Adapters.addAdapter(bundle, location);
+      Adapters.addAdapter(bundle, manifest);
+      return bundle;
    }
 
    private static Dictionary<String, String> toDictionary(final BundleManifest manifest)
@@ -101,7 +104,7 @@ public class OsgiStateBuilder
    private static BundleManifest readManifest(File location)
    {
       final Resource resource = new BundleManifestResourceImpl();
-      new IOOperation<InputStream>(newBundleResource(location, "META-INF/MANIFEST.MF"))
+      new IOOperation<InputStream>(osgiIn(location, "META-INF/MANIFEST.MF"))
       {
          @Override
          protected void run(InputStream inputStream) throws IOException
@@ -110,18 +113,6 @@ public class OsgiStateBuilder
          }
       }.run();
       return (BundleManifest) resource.getContents().get(0);
-   }
-
-   private static IOResource<? extends InputStream> newBundleResource(File bundleLocation, String entryName)
-   {
-      if (bundleLocation.isDirectory())
-      {
-         return buffIn(fileIn(new File(bundleLocation, entryName)));
-      }
-      else
-      {
-         return zipIn(buffIn(fileIn(bundleLocation)), entryName);
-      }
    }
 
    @SuppressWarnings({ "rawtypes", "unchecked" })

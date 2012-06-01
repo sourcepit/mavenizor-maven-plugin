@@ -9,7 +9,7 @@ package org.sourcepit.mavenizor.maven.converter;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 
-public interface Converter
+public interface GAVStrategy
 {
    String deriveGroupId(BundleDescription bundle);
 
