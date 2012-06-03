@@ -24,13 +24,13 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Model;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.slf4j.Logger;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.manifest.osgi.ClassPathEntry;
+import org.sourcepit.common.maven.model.MavenArtifact;
+import org.sourcepit.common.maven.model.MavenModelFactory;
 import org.sourcepit.common.utils.io.DualIOOperation;
 import org.sourcepit.common.utils.io.IOResource;
 import org.sourcepit.common.utils.lang.PipedIOException;
@@ -50,63 +50,48 @@ public class DefaultBundleConverter implements BundleConverter
       this.log = log;
    }
 
-   public Collection<ArtifactDescription> toMavenArtifacts(BundleDescription bundle, List<Dependency> dependencies,
-      GAVStrategy converter, PropertiesMap options)
+   public Collection<MavenArtifact> toMavenArtifacts(BundleDescription bundle, GAVStrategy gavStrategy,
+      PropertiesMap options)
    {
       // allow re-write
-      final List<ArtifactDescription> replacement = replaceWithExistingMavenArtifacts(bundle);
+      final List<MavenArtifact> replacement = replaceWithExistingMavenArtifacts(bundle, gavStrategy, options);
       if (replacement != null)
       {
          return replacement;
       }
 
-      // no re-write... so go further
-      final List<ArtifactDescription> descriptors = new ArrayList<ArtifactDescription>();
-      processEmbeddedLibraries(bundle, dependencies, converter, options, descriptors);
+      final List<MavenArtifact> artifacts = new ArrayList<MavenArtifact>();
+      unwrapEmbeddedLibraries(bundle, gavStrategy, options, artifacts);
 
-      final boolean hasUnwrappedLibs = descriptors.size() > 0;
-      final boolean omit = hasUnwrappedLibs ? omitEnclosingBundle(bundle, options) : false;
+      final boolean hasEmbeddedArtifacts = artifacts.size() > 0;
+      final boolean omit = hasEmbeddedArtifacts ? isOmitMainBundle(bundle, options) : false;
       if (omit)
       {
          log.info("Omitting enclosing bundle");
       }
       else
       {
-         processEnclosingBundle(bundle, dependencies, converter, descriptors);
+         final MavenArtifact mainArtifact = toMainMavenArtifact(bundle, gavStrategy);
+         artifacts.add(0, mainArtifact);
       }
-      return descriptors;
+      return artifacts;
    }
 
-   private void processEnclosingBundle(BundleDescription bundle, List<Dependency> dependencies, GAVStrategy converter,
-      final List<ArtifactDescription> descriptors)
+   private MavenArtifact toMainMavenArtifact(BundleDescription bundle, GAVStrategy converter)
    {
-      final Model model = new Model();
-      model.setGroupId(converter.deriveGroupId(bundle));
-      model.setArtifactId(converter.deriveArtifactId(bundle));
-      model.setVersion(converter.deriveMavenVersion(bundle));
+      final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+      artifact.setGroupId(converter.deriveGroupId(bundle));
+      artifact.setArtifactId(converter.deriveArtifactId(bundle));
+      artifact.setVersion(converter.deriveMavenVersion(bundle));
+      artifact.setFile(getBundleLocation(bundle));
 
-      for (ArtifactDescription embeddedLibDescriptor : descriptors)
-      {
-         final Dependency dependency = new Dependency();
-         final Model embeddedLibModel = embeddedLibDescriptor.getModel();
+      markAsMavenized(artifact);
 
-         dependency.setGroupId(embeddedLibModel.getGroupId());
-         dependency.setArtifactId(embeddedLibModel.getArtifactId());
-         dependency.setVersion(embeddedLibModel.getVersion());
-
-         model.getDependencies().add(dependency);
-      }
-
-      model.getDependencies().addAll(dependencies);
-
-      final ArtifactDescription descriptor = new ArtifactDescription();
-      descriptor.setModel(model);
-      descriptor.setFile(getBundleLocation(bundle));
-      descriptors.add(0, descriptor);
+      return artifact;
    }
 
-   private void processEmbeddedLibraries(BundleDescription bundle, List<Dependency> dependencies,
-      GAVStrategy converter, PropertiesMap options, final List<ArtifactDescription> descriptors)
+   private void unwrapEmbeddedLibraries(BundleDescription bundle, GAVStrategy converter, PropertiesMap options,
+      final List<MavenArtifact> embeddedArtifacts)
    {
       final List<Path> libEntries = getEmbeddedLibEntries(bundle);
       libEntries.remove(new Path("."));
@@ -114,7 +99,7 @@ public class DefaultBundleConverter implements BundleConverter
       final boolean hasLibEntries = libEntries.size() > 0;
       if (hasLibEntries)
       {
-         final boolean unwrap = unwrapEmbeddedLibraries(bundle, options);
+         final boolean unwrap = isUnwrapEmbeddedLibraries(bundle, options);
          if (unwrap)
          {
             log.info("Processing embedded libraries " + libEntries);
@@ -122,7 +107,7 @@ public class DefaultBundleConverter implements BundleConverter
             final File bundleWorkingDir = new File(workingDir, bundle.toString());
             for (Path libEntry : libEntries)
             {
-               processEmbeddedLibrary(bundleWorkingDir, bundle, libEntry, dependencies, converter, descriptors);
+               unwrapEmbeddedArtifacts(bundleWorkingDir, bundle, libEntry, converter, options, embeddedArtifacts);
             }
          }
          else
@@ -133,38 +118,48 @@ public class DefaultBundleConverter implements BundleConverter
 
    }
 
-   private void processEmbeddedLibrary(File bundleWorkingDir, BundleDescription bundle, Path libEntry,
-      List<Dependency> dependencies, GAVStrategy converter, final List<ArtifactDescription> descriptors)
+   private void unwrapEmbeddedArtifacts(File bundleWorkingDir, BundleDescription bundle, Path libEntry,
+      GAVStrategy converter, PropertiesMap options, final List<MavenArtifact> embeddedArtifacts)
    {
       final File bundleLocation = getBundleLocation(bundle);
 
       final File libFile = new File(bundleWorkingDir, libEntry.toString());
       if (copyEmbeddedLib(bundleLocation, libEntry, libFile))
       {
-         final List<ArtifactDescription> existingArtifacts = replaceWithExistingMavenArtifacts(bundle, libEntry,
-            libFile);
+         final List<MavenArtifact> existingArtifacts = replaceWithExistingMavenArtifacts(bundle, libEntry, libFile,
+            options);
          if (existingArtifacts == null)
          {
-            final Model model = new Model();
-            model.setGroupId(converter.deriveGroupId(bundle));
-            model.setArtifactId(libEntry.getFileName());
-            model.setVersion(converter.deriveMavenVersion(bundle));
-            model.setDependencies(dependencies);
+            final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+            artifact.setGroupId(converter.deriveGroupId(bundle));
+            artifact.setArtifactId(libEntry.getFileName());
+            artifact.setVersion(converter.deriveMavenVersion(bundle));
+            artifact.setFile(libFile);
 
-            final ArtifactDescription descriptor = new ArtifactDescription();
-            descriptor.setModel(model);
-            descriptor.setFile(libFile);
-            descriptors.add(descriptor);
+            markAsMavenized(artifact);
+            markAsEmbeddedArtifact(artifact);
+
+            embeddedArtifacts.add(artifact);
          }
          else
          {
-            descriptors.addAll(existingArtifacts);
+            embeddedArtifacts.addAll(existingArtifacts);
          }
       }
       else
       {
          log.warn("Library " + libEntry + " not found in " + bundleLocation);
       }
+   }
+
+   private static void markAsMavenized(final MavenArtifact artifact)
+   {
+      artifact.getAnnotation("mavenizor", true).setData("mavenized", true);
+   }
+
+   private static void markAsEmbeddedArtifact(final MavenArtifact artifact)
+   {
+      artifact.getAnnotation("mavenizor", true).setData("embeddedArtifact", true);
    }
 
    private static File getBundleLocation(BundleDescription bundle)
@@ -240,24 +235,24 @@ public class DefaultBundleConverter implements BundleConverter
       return jarPaths;
    }
 
-
-   private boolean omitEnclosingBundle(BundleDescription enclosingBundle, PropertiesMap options)
-   {
-      return options.getBoolean("omitEnclosingBundles", false);
-   }
-
-   private boolean unwrapEmbeddedLibraries(BundleDescription enclosingBundle, PropertiesMap options)
-   {
-      return options.getBoolean("unwrapEmbeddedLibraries", false);
-   }
-
-   private List<ArtifactDescription> replaceWithExistingMavenArtifacts(BundleDescription bundle)
+   private List<MavenArtifact> replaceWithExistingMavenArtifacts(BundleDescription bundle, GAVStrategy gavStrategy,
+      PropertiesMap options)
    {
       return null;
    }
 
-   private List<ArtifactDescription> replaceWithExistingMavenArtifacts(BundleDescription bundle, Path libEntry,
-      File libFile)
+   private boolean isOmitMainBundle(BundleDescription enclosingBundle, PropertiesMap options)
+   {
+      return options.getBoolean("omitEnclosingBundles", false);
+   }
+
+   private boolean isUnwrapEmbeddedLibraries(BundleDescription enclosingBundle, PropertiesMap options)
+   {
+      return options.getBoolean("unwrapEmbeddedLibraries", false);
+   }
+
+   private List<MavenArtifact> replaceWithExistingMavenArtifacts(BundleDescription bundle, Path libEntry, File libFile,
+      PropertiesMap options)
    {
       return null;
    }

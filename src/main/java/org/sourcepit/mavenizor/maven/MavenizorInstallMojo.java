@@ -12,8 +12,6 @@ import static org.sourcepit.common.utils.io.IOResources.fileOut;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
@@ -22,10 +20,11 @@ import org.apache.maven.artifact.InvalidRepositoryException;
 import org.apache.maven.artifact.installer.ArtifactInstallationException;
 import org.apache.maven.artifact.installer.ArtifactInstaller;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.ModelWriter;
 import org.apache.maven.repository.RepositorySystem;
-import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.io.IOOperation;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.mavenizor.Mavenizor.Result;
@@ -45,6 +44,9 @@ public class MavenizorInstallMojo extends MavenizorMojo
    private RepositorySystem repositorySystem;
 
    @Inject
+   private ArtifactRepositoryLayout repositoryLayout;
+
+   @Inject
    private ModelWriter modelWriter;
 
    /** @parameter expression="${localRepository}" */
@@ -62,42 +64,28 @@ public class MavenizorInstallMojo extends MavenizorMojo
          throw Exceptions.pipe(e);
       }
 
-      for (Entry<BundleDescription, Collection<ArtifactDescription>> entry : result.getArtifactDescriptors().entrySet())
+      for (ArtifactBundle artifactBundle : result.getGAVToMavenArtifactBundleMap().values())
       {
-         final BundleDescription bundle = entry.getKey();
-         Collection<ArtifactDescription> artifactDescriptors = entry.getValue();
-         install(bundle, artifactDescriptors);
-      }
-   }
+         final Model pom = artifactBundle.getPom();
 
-   private void install(BundleDescription bundle, Collection<ArtifactDescription> artifactDescriptors)
-   {
-      for (ArtifactDescription artifactDescriptor : artifactDescriptors)
-      {
-         final Model model = artifactDescriptor.getModel();
-         final File pomFile = new File(work, bundle + "/" + artifactDescriptor.getFile().getName() + ".pom");
+         final Artifact pomArtifact = createArtifact(pom, "pom");
+
+         final File pomFile = new File(work, repositoryLayout.pathOf(pomArtifact));
          new IOOperation<OutputStream>(buffOut(fileOut(pomFile, true)))
          {
             @Override
             protected void run(OutputStream outputStream) throws IOException
             {
-               modelWriter.write(outputStream, null, model);
+               modelWriter.write(outputStream, null, pom);
             }
          }.run();
-
-         final Artifact pomArtifact = createArtifact(model, "pom");
          install(pomFile, pomArtifact);
 
-         final Artifact mainArtifact = createArtifact(model, model.getPackaging());
-         install(artifactDescriptor.getFile(), mainArtifact);
-
-         for (Entry<String, File> attachment : artifactDescriptor.getClassifierToFile().entrySet())
+         for (MavenArtifact mavenArtifact : artifactBundle.getArtifacts())
          {
-            final String classifier = attachment.getKey();
-            final File attachedFile = attachment.getValue();
+            final Artifact artifact = createArtifact(pom, mavenArtifact.getClassifier(), mavenArtifact.getType());
+            install(mavenArtifact.getFile(), artifact);
 
-            final Artifact attachedArtifact = createArtifact(model, classifier, "jar");
-            install(attachedFile, attachedArtifact);
          }
       }
    }

@@ -9,15 +9,19 @@ package org.sourcepit.mavenizor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
+import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.mavenizor.maven.ArtifactDescription;
+import org.sourcepit.mavenizor.maven.ArtifactBundle;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
+import org.sourcepit.modeling.common.Annotation;
 
 public interface Mavenizor
 {
@@ -68,7 +72,8 @@ public interface Mavenizor
    {
       private final List<BundleDescription> inputBundles = new ArrayList<BundleDescription>();
       private final List<BundleDescription> sourceBundles = new ArrayList<BundleDescription>();
-      private final Map<BundleDescription, Collection<ArtifactDescription>> artifactDescriptors = new HashMap<BundleDescription, Collection<ArtifactDescription>>();
+      private final Map<BundleDescription, Collection<MavenArtifact>> artifactDescriptors = new HashMap<BundleDescription, Collection<MavenArtifact>>();
+      private final Map<String, ArtifactBundle> mavenArtifactBundles = new HashMap<String, ArtifactBundle>();
 
       public List<BundleDescription> getInputBundles()
       {
@@ -80,9 +85,75 @@ public interface Mavenizor
          return sourceBundles;
       }
 
-      public Map<BundleDescription, Collection<ArtifactDescription>> getArtifactDescriptors()
+      public Map<BundleDescription, Collection<MavenArtifact>> getBundleToMavenArtifactsMap()
       {
          return artifactDescriptors;
+      }
+
+      public Map<String, ArtifactBundle> getGAVToMavenArtifactBundleMap()
+      {
+         return mavenArtifactBundles;
+      }
+
+      public Set<ArtifactBundle> getArtifactBundles(BundleDescription bundle)
+      {
+         final Set<ArtifactBundle> artifactBundles = new LinkedHashSet<ArtifactBundle>();
+         final Collection<MavenArtifact> artifacts = getBundleToMavenArtifactsMap().get(bundle);
+         if (artifacts != null && !artifacts.isEmpty())
+         {
+            for (MavenArtifact artifact : artifacts)
+            {
+               final ArtifactBundle artifactBundle = getArtifactBundle(artifact, false);
+               if (artifactBundle == null)
+               {
+                  throw new IllegalStateException();
+               }
+               artifactBundles.add(artifactBundle);
+            }
+         }
+         return artifactBundles;
+      }
+
+      public ArtifactBundle getArtifactBundle(MavenArtifact artifact, boolean createOnDemand)
+      {
+         final String gav = createGAV(artifact);
+         ArtifactBundle artifactBundle = getGAVToMavenArtifactBundleMap().get(gav);
+         if (artifactBundle == null)
+         {
+            artifactBundle = new ArtifactBundle();
+            getGAVToMavenArtifactBundleMap().put(gav, artifactBundle);
+         }
+         return artifactBundle;
+      }
+
+      public static String createGAV(MavenArtifact artifact)
+      {
+         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+      }
+
+      public List<MavenArtifact> getEmbeddedArtifacts(BundleDescription bundle)
+      {
+         final List<MavenArtifact> embeddedArtifacts = new ArrayList<MavenArtifact>();
+         for (MavenArtifact artifact : getBundleToMavenArtifactsMap().get(bundle))
+         {
+            if (isEmbeddedArtifact(artifact))
+            {
+               embeddedArtifacts.add(artifact);
+            }
+         }
+         return embeddedArtifacts;
+      }
+
+      public static boolean isMavenized(MavenArtifact artifact)
+      {
+         final Annotation annotation = artifact.getAnnotation("mavenizor");
+         return annotation != null && annotation.getData("mavenized", false);
+      }
+
+      public static boolean isEmbeddedArtifact(MavenArtifact artifact)
+      {
+         final Annotation annotation = artifact.getAnnotation("mavenizor");
+         return annotation != null && annotation.getData("embeddedArtifact", false);
       }
    }
 

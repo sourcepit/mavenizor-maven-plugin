@@ -7,15 +7,14 @@
 package org.sourcepit.mavenizor.maven;
 
 import java.util.Collection;
-import java.util.List;
 
-import org.apache.maven.model.Dependency;
 import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.props.PropertiesMap;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 
 public interface BundleConverter
 {
-   Collection<ArtifactDescription> toMavenArtifacts(BundleDescription bundle, final List<Dependency> dependencies,
-      GAVStrategy converter, PropertiesMap options);
+   Collection<MavenArtifact> toMavenArtifacts(BundleDescription bundle, GAVStrategy converter,
+      PropertiesMap options);
 }

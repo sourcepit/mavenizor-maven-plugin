@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -25,8 +26,10 @@ import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParser;
 import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParserImpl;
+import org.sourcepit.common.maven.model.MavenArtifact;
+import org.sourcepit.common.maven.model.MavenModelFactory;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.mavenizor.maven.ArtifactDescription;
+import org.sourcepit.mavenizor.maven.ArtifactBundle;
 import org.sourcepit.mavenizor.maven.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
@@ -72,7 +75,7 @@ public class DefaultMavenizor implements Mavenizor
       return result;
    }
 
-   private void mavenize(BundleDescription bundle, GAVStrategy converter, PropertiesMap options, Result result)
+   private void mavenize(BundleDescription bundle, GAVStrategy gavStrategy, PropertiesMap options, Result result)
    {
       if (isEclipseSourceBundle(bundle))
       {
@@ -81,42 +84,106 @@ public class DefaultMavenizor implements Mavenizor
       else
       {
          log.info("Mavenizing " + bundle);
-         final List<Dependency> dependencies = new ArrayList<Dependency>();
-         processDependenciesRecursive(bundle, converter, dependencies, options, result);
-         final Collection<ArtifactDescription> descriptors = bundleConverter.toMavenArtifacts(bundle, dependencies,
-            converter, options);
-         result.getArtifactDescriptors().put(bundle, descriptors);
+
+         final Collection<MavenArtifact> artifacts = bundleConverter.toMavenArtifacts(bundle, gavStrategy, options);
+         result.getBundleToMavenArtifactsMap().put(bundle, artifacts);
+         for (MavenArtifact artifact : artifacts)
+         {
+            result.getArtifactBundle(artifact, true).getArtifacts().add(artifact);
+         }
+
+         addDependencies(bundle, gavStrategy, options, result);
       }
    }
 
-   private boolean isEclipseSourceBundle(BundleDescription bundle)
+   private void addDependencies(BundleDescription bundle, GAVStrategy gavStrategy, PropertiesMap options, Result result)
    {
-      final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
-      return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
+      final Collection<MavenArtifact> artifacts = result.getBundleToMavenArtifactsMap().get(bundle);
+
+      List<Dependency> embeddedDependencies = null;
+      List<Dependency> dependencies = null;
+      for (MavenArtifact artifact : artifacts)
+      {
+         final ArtifactBundle artifactBundle = result.getArtifactBundle(artifact, false);
+
+         // create pom stub
+         Model pom = artifactBundle.getPom();
+         if (pom == null)
+         {
+            pom = new Model();
+            pom.setGroupId(artifact.getGroupId());
+            pom.setArtifactId(artifact.getArtifactId());
+            pom.setVersion(artifact.getVersion());
+            artifactBundle.setPom(pom);
+         }
+
+         if (Result.isMavenized(artifact))
+         {
+            if (!Result.isEmbeddedArtifact(artifact)) // is main bundle
+            {
+               // add dependencies to embedded bundles
+               if (embeddedDependencies == null)
+               {
+                  embeddedDependencies = determineEmbeddedDependencies(bundle, result);
+               }
+               pom.getDependencies().addAll(embeddedDependencies);
+            }
+
+            // add normal dependencies
+            if (dependencies == null)
+            {
+               dependencies = determineDependencies(bundle, gavStrategy, options, result);
+            }
+            pom.getDependencies().addAll(dependencies);
+         }
+      }
    }
 
-   private void processDependenciesRecursive(BundleDescription bundle, GAVStrategy converter,
-      List<Dependency> dependencies, PropertiesMap options, Result result)
+   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, Result result)
    {
+      final List<Dependency> embeddedDependencies = new ArrayList<Dependency>();
+      for (MavenArtifact embeddedArtifact : result.getEmbeddedArtifacts(bundle))
+      {
+         final Dependency dependency = new Dependency();
+         dependency.setGroupId(embeddedArtifact.getGroupId());
+         dependency.setArtifactId(embeddedArtifact.getArtifactId());
+         dependency.setVersion(embeddedArtifact.getVersion());
+         if (embeddedArtifact.getClassifier() != null)
+         {
+            dependency.setClassifier(embeddedArtifact.getClassifier());
+         }
+         if (!"jar".equals(embeddedArtifact.getType()))
+         {
+            dependency.setType(embeddedArtifact.getType());
+         }
+         embeddedDependencies.add(dependency);
+      }
+      return embeddedDependencies;
+   }
+
+   private List<Dependency> determineDependencies(BundleDescription bundle, GAVStrategy converter,
+      PropertiesMap options, Result result)
+   {
+      final List<Dependency> dependencies = new ArrayList<Dependency>();
+
       final Collection<Requirement> requirements = requirementsCollector.collectRequirements(bundle);
       for (Requirement requirement : requirements)
       {
          final BundleDescription requiredBundle = requirement.getTo();
 
-         Collection<ArtifactDescription> descriptors = result.getArtifactDescriptors().get(requiredBundle);
-         if (descriptors == null)
+         Collection<MavenArtifact> requiredArtifacts = result.getBundleToMavenArtifactsMap().get(requiredBundle);
+         if (requiredArtifacts == null)
          {
+            // The bundle has not been mavenized... do it!
             mavenize(requiredBundle, converter, options, result);
-            descriptors = result.getArtifactDescriptors().get(requiredBundle);
+            requiredArtifacts = result.getBundleToMavenArtifactsMap().get(requiredBundle);
          }
 
-         for (ArtifactDescription descriptor : descriptors)
+         for (MavenArtifact requiredArtifact : requiredArtifacts)
          {
-            final Model model = descriptor.getModel();
-
             final Dependency dependency = new Dependency();
-            dependency.setGroupId(model.getGroupId());
-            dependency.setArtifactId(model.getArtifactId());
+            dependency.setGroupId(requiredArtifact.getGroupId());
+            dependency.setArtifactId(requiredArtifact.getArtifactId());
             dependency.setOptional(requirement.isOptional());
 
             final Version requiredVersion = Version.parse(requiredBundle.getVersion().toString());
@@ -132,6 +199,14 @@ public class DefaultMavenizor implements Mavenizor
             dependencies.add(dependency);
          }
       }
+
+      return dependencies;
+   }
+
+   private boolean isEclipseSourceBundle(BundleDescription bundle)
+   {
+      final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
+      return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
    }
 
    private void processSourceBundles(final State state, final Result result)
@@ -156,15 +231,23 @@ public class DefaultMavenizor implements Mavenizor
          }
          else
          {
-            final Collection<ArtifactDescription> descriptors = result.getArtifactDescriptors().get(hostBundle);
-            if (descriptors != null && !descriptors.isEmpty())
+            log.info("Attaching source " + sourceBundle + " to " + hostBundleName + "_" + version);
+
+            final File sourceJar = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, File.class);
+
+            final Set<ArtifactBundle> artifactBundles = result.getArtifactBundles(hostBundle);
+            for (ArtifactBundle artifactBundle : artifactBundles)
             {
-               final File sourceJar = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, File.class);
-               log.info("Attaching source " + sourceBundle + " to " + hostBundleName + "_" + version);
-               for (ArtifactDescription artifactDescriptor : descriptors)
-               {
-                  artifactDescriptor.getClassifierToFile().put("sources", sourceJar);
-               }
+               final Model pom = artifactBundle.getPom();
+
+               final MavenArtifact sourceArtifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+               sourceArtifact.setGroupId(pom.getGroupId());
+               sourceArtifact.setArtifactId(pom.getArtifactId());
+               sourceArtifact.setVersion(pom.getVersion());
+               sourceArtifact.setClassifier("sources");
+               sourceArtifact.setFile(sourceJar);
+
+               artifactBundle.getArtifacts().add(sourceArtifact);
             }
          }
       }
