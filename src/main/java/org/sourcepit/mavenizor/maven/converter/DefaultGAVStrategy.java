@@ -16,6 +16,7 @@ import javax.validation.constraints.Size;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
+import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
 public class DefaultGAVStrategy implements GAVStrategy
@@ -26,15 +27,25 @@ public class DefaultGAVStrategy implements GAVStrategy
       "org.eclipse" };
 
    private final List<SnapshotRule> snapshotRules;
+   private final String groupIdPrefix;
+   private final boolean trimQualifiers;
 
-   public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules)
+   public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules, String groupIdPrefix, boolean trimQualifiers)
    {
       this.snapshotRules = snapshotRules;
+      this.groupIdPrefix = groupIdPrefix == null ? null : groupIdPrefix.endsWith(".") ? groupIdPrefix : groupIdPrefix
+         + ".";
+      this.trimQualifiers = trimQualifiers;
    }
 
    public String deriveGroupId(@NotNull BundleDescription bundle)
    {
-      return deriveGroupId(bundle.getSymbolicName());
+      final String groupId = deriveGroupId(bundle.getSymbolicName());
+      if (groupIdPrefix == null)
+      {
+         return groupId;
+      }
+      return groupIdPrefix + groupId;
    }
 
    private String deriveGroupId(@NotNull @Size(min = 1) String symbolicName)
@@ -71,6 +82,11 @@ public class DefaultGAVStrategy implements GAVStrategy
       return symbolicName;
    }
 
+   public String deriveArtifactId(@NotNull BundleDescription bundle, @NotNull Path libraryEntry)
+   {
+      return libraryEntry.getFileName();
+   }
+
    public String deriveMavenVersion(@NotNull BundleDescription bundle)
    {
       final Version version = Version.parse(bundle.getVersion().toString());
@@ -79,8 +95,6 @@ public class DefaultGAVStrategy implements GAVStrategy
 
    private String deriveMavenVersion(BundleDescription bundle, final Version version)
    {
-      final boolean isSnapshot = isSnapshotVersion(bundle, version);
-
       final StringBuilder sb = new StringBuilder();
       sb.append(version.getMajor());
       sb.append('.');
@@ -88,15 +102,27 @@ public class DefaultGAVStrategy implements GAVStrategy
       sb.append('.');
       sb.append(version.getMicro());
 
-      final String qualifier = version.getQualifier();
-      final boolean hasQualifier = qualifier.length() > 0;
-      if (hasQualifier || isSnapshot)
+      final String qualifier = deriveMavenVersionQualifier(bundle, version);
+      if (qualifier != null)
       {
          sb.append('-');
-         sb.append(isSnapshot ? "SNAPSHOT" : qualifier);
+         sb.append(qualifier);
       }
 
       return sb.toString();
+   }
+
+   private String deriveMavenVersionQualifier(BundleDescription bundle, Version version)
+   {
+      if (isSnapshotVersion(bundle, version))
+      {
+         return "SNAPSHOT";
+      }
+      if (!trimQualifiers && version.getQualifier().length() > 0)
+      {
+         return version.getQualifier();
+      }
+      return null;
    }
 
    public String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull VersionRange versionRange)
@@ -106,7 +132,7 @@ public class DefaultGAVStrategy implements GAVStrategy
 
       if (highVersion == null && lowVersion != null)
       {
-         return deriveMavenVersion(bundle, lowVersion);
+         return deriveMavenVersionRange(bundle, lowVersion);
       }
 
       final StringBuilder sb = new StringBuilder();
@@ -116,6 +142,30 @@ public class DefaultGAVStrategy implements GAVStrategy
       appendToRange(sb, highVersion);
       sb.append(versionRange.isHighInclusive() ? ']' : ')');
       return sb.toString();
+   }
+
+   private String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull Version recommendedVersion)
+   {
+      final String qualifier = deriveMavenVersionQualifier(bundle, recommendedVersion);
+      final StringBuilder sb = new StringBuilder();
+      if (qualifier == null)
+      {
+         sb.append('[');
+         appendToRange(sb, recommendedVersion);
+         sb.append(",)");
+      }
+      else
+      {
+         sb.append(recommendedVersion.getMajor());
+         sb.append('.');
+         sb.append(recommendedVersion.getMinor());
+         sb.append('.');
+         sb.append(recommendedVersion.getMicro());
+         sb.append('-');
+         sb.append(qualifier);
+      }
+      return sb.toString();
+
    }
 
    private void appendToRange(final StringBuilder sb, final Version version)

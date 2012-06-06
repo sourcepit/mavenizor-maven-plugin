@@ -59,10 +59,26 @@ public class MavenizorMojoTest extends EmbeddedMavenEnvironmentTest
       };
    }
 
-   @Test
-   public void test() throws Throwable
+   // @Test
+   public void testFeature() throws Throwable
    {
       final File projectDir = getResource("projects/org.sourcepit.mavenizor.test.feature");
+      final File pomFile = new File(projectDir, "pom.xml");
+      assertTrue(pomFile.exists());
+
+      Thread.currentThread().setContextClassLoader(getClassLoader());
+
+      final MavenExecutionRequest request = newMavenExecutionRequest(pomFile, System.getProperties(), getEnvironment()
+         .newProperties(), "clean", "package");
+
+      final MavenExecutionResult2 result = execute(request);
+      assertSuccess(result);
+   }
+
+   @Test
+   public void testPlugin() throws Throwable
+   {
+      final File projectDir = getResource("projects/org.sourcepit.mavenized");
       final File pomFile = new File(projectDir, "pom.xml");
       assertTrue(pomFile.exists());
 

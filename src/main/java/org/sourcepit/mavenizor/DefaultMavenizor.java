@@ -6,6 +6,8 @@
 
 package org.sourcepit.mavenizor;
 
+import static org.sourcepit.mavenizor.Mavenizor.Result.markAsMavenized;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,6 +17,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -28,9 +31,9 @@ import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParser;
 import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParserImpl;
 import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.maven.model.MavenModelFactory;
+import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.mavenizor.maven.ArtifactBundle;
-import org.sourcepit.mavenizor.maven.BundleConverter;
+import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 import org.sourcepit.mavenizor.state.Requirement;
@@ -47,6 +50,9 @@ public class DefaultMavenizor implements Mavenizor
 
    @Inject
    private BundleConverter bundleConverter;
+
+   @Inject
+   private OptionsHelper optionsHelper;
 
    public Result mavenize(Request request)
    {
@@ -66,7 +72,7 @@ public class DefaultMavenizor implements Mavenizor
          if (inputFilter.accept(bundle))
          {
             result.getInputBundles().add(bundle);
-            mavenize(bundle, gavStrategy, options, result);
+            mavenize(request.getTargetType(), bundle, gavStrategy, options, result);
          }
       }
 
@@ -75,8 +81,14 @@ public class DefaultMavenizor implements Mavenizor
       return result;
    }
 
-   private void mavenize(BundleDescription bundle, GAVStrategy gavStrategy, PropertiesMap options, Result result)
+   private void mavenize(TargetType targetType, BundleDescription bundle, GAVStrategy gavStrategy,
+      PropertiesMap options, Result result)
    {
+      if (result.getBundleToMavenArtifactsMap().containsKey(bundle) || result.getSourceBundles().contains(bundle))
+      {
+         return;
+      }
+
       if (isEclipseSourceBundle(bundle))
       {
          result.getSourceBundles().add(bundle);
@@ -85,18 +97,36 @@ public class DefaultMavenizor implements Mavenizor
       {
          log.info("Mavenizing " + bundle);
 
-         final Collection<MavenArtifact> artifacts = bundleConverter.toMavenArtifacts(bundle, gavStrategy, options);
+         final BundleConverter.Result converterResult = bundleConverter.toMavenArtifacts(targetType, bundle,
+            gavStrategy, options);
+
+         result.getBundleToBundleConverterResultMap().put(bundle, converterResult);
+
+         for (Path libEntry : converterResult.getMissingEmbeddedLibraries())
+         {
+            log.warn("Library " + libEntry + " not found in " + BundleAdapterFactory.DEFAULT.adapt(bundle, File.class));
+         }
+
+         for (Path libEntry : converterResult.getUnhandledEmbeddedLibraries())
+         {
+            log.warn("Unknown embedded library. Introduce it via property '" + bundle.getSymbolicName() + "[_"
+               + bundle.getVersion() + "]/" + libEntry
+               + " = mavenize | ignore | auto_detect | <groupId>:<artifactId>:<type>[:<classifier>]:<version>'");
+         }
+
+         final Collection<MavenArtifact> artifacts = converterResult.getMavenArtifacts();
          result.getBundleToMavenArtifactsMap().put(bundle, artifacts);
          for (MavenArtifact artifact : artifacts)
          {
             result.getArtifactBundle(artifact, true).getArtifacts().add(artifact);
          }
 
-         addDependencies(bundle, gavStrategy, options, result);
+         addDependencies(targetType, bundle, gavStrategy, options, result);
       }
    }
 
-   private void addDependencies(BundleDescription bundle, GAVStrategy gavStrategy, PropertiesMap options, Result result)
+   private void addDependencies(TargetType targetType, BundleDescription bundle, GAVStrategy gavStrategy,
+      PropertiesMap options, Result result)
    {
       final Collection<MavenArtifact> artifacts = result.getBundleToMavenArtifactsMap().get(bundle);
 
@@ -111,6 +141,7 @@ public class DefaultMavenizor implements Mavenizor
          if (pom == null)
          {
             pom = new Model();
+            pom.setModelVersion("4.0.0");
             pom.setGroupId(artifact.getGroupId());
             pom.setArtifactId(artifact.getArtifactId());
             pom.setVersion(artifact.getVersion());
@@ -124,7 +155,7 @@ public class DefaultMavenizor implements Mavenizor
                // add dependencies to embedded bundles
                if (embeddedDependencies == null)
                {
-                  embeddedDependencies = determineEmbeddedDependencies(bundle, result);
+                  embeddedDependencies = determineEmbeddedDependencies(bundle, options, result);
                }
                pom.getDependencies().addAll(embeddedDependencies);
             }
@@ -132,14 +163,14 @@ public class DefaultMavenizor implements Mavenizor
             // add normal dependencies
             if (dependencies == null)
             {
-               dependencies = determineDependencies(bundle, gavStrategy, options, result);
+               dependencies = determineDependencies(targetType, bundle, gavStrategy, options, result);
             }
             pom.getDependencies().addAll(dependencies);
          }
       }
    }
 
-   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, Result result)
+   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, PropertiesMap options, Result result)
    {
       final List<Dependency> embeddedDependencies = new ArrayList<Dependency>();
       for (MavenArtifact embeddedArtifact : result.getEmbeddedArtifacts(bundle))
@@ -148,6 +179,14 @@ public class DefaultMavenizor implements Mavenizor
          dependency.setGroupId(embeddedArtifact.getGroupId());
          dependency.setArtifactId(embeddedArtifact.getArtifactId());
          dependency.setVersion(embeddedArtifact.getVersion());
+         if (optionsHelper.getBooleanValue(bundle, options, "@embeddedLibraries.provided", false))
+         {
+            dependency.setScope(Artifact.SCOPE_PROVIDED);
+         }
+         if (optionsHelper.getBooleanValue(bundle, options, "@embeddedLibraries.optional", false))
+         {
+            dependency.setOptional(true);
+         }
          if (embeddedArtifact.getClassifier() != null)
          {
             dependency.setClassifier(embeddedArtifact.getClassifier());
@@ -161,8 +200,8 @@ public class DefaultMavenizor implements Mavenizor
       return embeddedDependencies;
    }
 
-   private List<Dependency> determineDependencies(BundleDescription bundle, GAVStrategy converter,
-      PropertiesMap options, Result result)
+   private List<Dependency> determineDependencies(TargetType targetType, BundleDescription bundle,
+      GAVStrategy converter, PropertiesMap options, Result result)
    {
       final List<Dependency> dependencies = new ArrayList<Dependency>();
 
@@ -175,7 +214,7 @@ public class DefaultMavenizor implements Mavenizor
          if (requiredArtifacts == null)
          {
             // The bundle has not been mavenized... do it!
-            mavenize(requiredBundle, converter, options, result);
+            mavenize(targetType, requiredBundle, converter, options, result);
             requiredArtifacts = result.getBundleToMavenArtifactsMap().get(requiredBundle);
          }
 
@@ -184,7 +223,10 @@ public class DefaultMavenizor implements Mavenizor
             final Dependency dependency = new Dependency();
             dependency.setGroupId(requiredArtifact.getGroupId());
             dependency.setArtifactId(requiredArtifact.getArtifactId());
-            dependency.setOptional(requirement.isOptional());
+            if (requirement.isOptional())
+            {
+               dependency.setOptional(true);
+            }
 
             final Version requiredVersion = Version.parse(requiredBundle.getVersion().toString());
             VersionRange versionRange = requirement.getVersionRange();
@@ -192,6 +234,16 @@ public class DefaultMavenizor implements Mavenizor
                || !versionRange.includes(requiredVersion))
             {
                versionRange = VersionRange.parse(requiredVersion.toString());
+            }
+
+            if (optionsHelper.isMatch(requirement, options, "@requirements.provided"))
+            {
+               dependency.setScope(Artifact.SCOPE_PROVIDED);
+            }
+
+            if (optionsHelper.isMatch(requirement, options, "@requirements.optional"))
+            {
+               dependency.setOptional(true);
             }
 
             dependency.setVersion(converter.deriveMavenVersionRange(requiredBundle, versionRange));
@@ -246,6 +298,8 @@ public class DefaultMavenizor implements Mavenizor
                sourceArtifact.setVersion(pom.getVersion());
                sourceArtifact.setClassifier("sources");
                sourceArtifact.setFile(sourceJar);
+
+               markAsMavenized(sourceArtifact);
 
                artifactBundle.getArtifacts().add(sourceArtifact);
             }

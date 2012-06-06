@@ -48,6 +48,11 @@
 			<artifactId>maven-compat</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.sonatype.aether</groupId>
+			<artifactId>aether-connector-wagon</artifactId>
+			<version>1.13.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-utils</artifactId>
 			<version>0.1.0-SNAPSHOT</version>
@@ -217,6 +222,7 @@
 		</plugins>
 	</build>
 
+
 	<profiles>
 		<profile>
 			<id>proxy-property</id>
@@ -247,6 +253,7 @@
 					<plugin>
 						<groupId>org.sourcepit.tools</groupId>
 						<artifactId>maven-install-plugin</artifactId>
+						<version>0.1.0-alpha-2</version>
 						<executions>
 							<execution>
 								<id>pre-integration-test</id>

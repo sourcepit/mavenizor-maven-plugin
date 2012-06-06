@@ -4,7 +4,7 @@
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.sourcepit.mavenizor.maven;
+package org.sourcepit.mavenizor;
 
 import java.util.ArrayList;
 import java.util.List;

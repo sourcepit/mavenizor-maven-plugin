@@ -61,15 +61,66 @@
 				<groupId>org.sourcepit</groupId>
 				<artifactId>mavenizor-maven-plugin</artifactId>
 				<version>0.1.0-SNAPSHOT</version>
+				<configuration>
+					<localRepositoryPath>${project.build.directory}/localRepository</localRepositoryPath>
+					<altDeploymentRepository>foo::default::file:/${project.build.directory}/deploymentRepository</altDeploymentRepository>
+					<mavenizeEmbeddedLibraries>true</mavenizeEmbeddedLibraries>
+					<options>
+						<property>
+							<name>org.apache.ant/lib/ant.jar</name>
+							<value>org.apache.ant:ant:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-antlr.jar</name>
+							<value>org.apache.ant:ant-antlr:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-bcel.jar</name>
+							<value>org.apache.ant:ant-apache-bcel:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-bsf.jar</name>
+							<value>org.apache.ant:ant-apache-bsf:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-log4j.jar</name>
+							<value>org.apache.ant:ant-apache-log4j:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-oro.jar</name>
+							<value>org.apache.ant:ant-apache-oro:jar:1.8.2</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-regexp.jar</name>
+							<value>mavenize</value>
+						</property>
+						<property>
+							<name>org.apache.ant/lib/ant-apache-resolver.jar</name>
+							<value>ignore</value>
+						</property>
+					</options>
+				</configuration>
 				<executions>
 					<execution>
+						<id>install-bundles</id>
 						<phase>package</phase>
 						<goals>
 							<goal>install-bundles</goal>
 						</goals>
-						<configuration>
-							<embeddedJars>unwrap</embeddedJars>
-						</configuration>
+					</execution>
+					<execution>
+						<id>deploy-bundles</id>
+						<phase>package</phase>
+						<goals>
+							<goal>deploy-bundles</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>deploy-bundles2</id>
+						<phase>package</phase>
+						<goals>
+							<goal>deploy-bundles</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>

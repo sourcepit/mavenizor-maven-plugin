@@ -41,9 +41,21 @@ public interface GAVStrategyFactory
 
    class Request
    {
+      private String groupIdPrefix;
       private boolean useDefaultSnapshotRules = true;
+      private boolean trimQualifiers = false;
 
       private final List<SnapshotRule> additionalSnapshotRules = new ArrayList<SnapshotRule>();
+      
+      public String getGroupIdPrefix()
+      {
+         return groupIdPrefix;
+      }
+
+      public void setGroupIdPrefix(String groupIdPrefix)
+      {
+         this.groupIdPrefix = groupIdPrefix;
+      }
 
       public boolean isUseDefaultSnapshotRules()
       {
@@ -58,6 +70,16 @@ public interface GAVStrategyFactory
       public List<SnapshotRule> getAdditionalSnapshotRules()
       {
          return additionalSnapshotRules;
+      }
+      
+      public boolean isTrimQualifiers()
+      {
+         return trimQualifiers;
+      }
+      
+      public void setTrimQualifiers(boolean trimQualifiers)
+      {
+         this.trimQualifiers = trimQualifiers;
       }
    }
 

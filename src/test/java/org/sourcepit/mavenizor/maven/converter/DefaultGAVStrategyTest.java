@@ -20,13 +20,10 @@ import org.junit.Test;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.guplex.test.GuplexTest;
-import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
-import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
-import org.sourcepit.mavenizor.maven.converter.DefaultGAVStrategyFactory;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.Request;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
-public class DefaultConverterTest extends GuplexTest
+public class DefaultGAVStrategyTest extends GuplexTest
 {
    @Inject
    private DefaultGAVStrategyFactory factory;
@@ -204,6 +201,10 @@ public class DefaultConverterTest extends GuplexTest
       BundleDescription bundle = newBundleDescription("foo", "1.0.0.qualifier");
       String mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-SNAPSHOT"));
+      
+      bundle = newBundleDescription("foo", "1.0.0.20120606-131029-1");
+      mavenVersion = converter.deriveMavenVersion(bundle);
+      assertThat(mavenVersion, equalTo("1.0.0-SNAPSHOT"));
 
       final Request request = new Request();
       request.setUseDefaultSnapshotRules(false);
@@ -213,6 +214,10 @@ public class DefaultConverterTest extends GuplexTest
       bundle = newBundleDescription("foo", "1.0.0.qualifier");
       mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-qualifier"));
+      
+      bundle = newBundleDescription("foo", "1.0.0.20120606-131029-1");
+      mavenVersion = converter.deriveMavenVersion(bundle);
+      assertThat(mavenVersion, equalTo("1.0.0-20120606-131029-1"));
    }
 
    @Test
@@ -240,7 +245,7 @@ public class DefaultConverterTest extends GuplexTest
 
       BundleDescription bundle = newBundleDescription("foo", "1");
       String mavenVersionRange = converter.deriveMavenVersionRange(bundle, VersionRange.parse("1.0.0"));
-      assertThat(mavenVersionRange, equalTo("1.0.0"));
+      assertThat(mavenVersionRange, equalTo("[1,)"));
 
       bundle = newBundleDescription("foo", "1");
       mavenVersionRange = converter.deriveMavenVersionRange(bundle, VersionRange.parse("1.0.0.qualifier"));

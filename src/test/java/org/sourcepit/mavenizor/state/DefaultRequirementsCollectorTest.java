@@ -20,7 +20,6 @@ import javax.inject.Inject;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
-import org.eclipse.osgi.service.resolver.ExportPackageDescription;
 import org.eclipse.osgi.service.resolver.State;
 import org.eclipse.osgi.service.resolver.StateObjectFactory;
 import org.hamcrest.core.Is;
@@ -41,8 +40,6 @@ import org.sourcepit.common.manifest.osgi.resource.BundleManifestResourceImpl;
 import org.sourcepit.common.maven.testing.EmbeddedMavenEnvironmentTest;
 import org.sourcepit.common.testing.Environment;
 import org.sourcepit.common.utils.lang.Exceptions;
-import org.sourcepit.mavenizor.state.DefaultRequirementsCollector;
-import org.sourcepit.mavenizor.state.Requirement;
 
 public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTest
 {
@@ -118,6 +115,33 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
       assertThat(requirement.getTo(), IsEqual.equalTo(bundleA));
       assertThat(requirement.getVersionRange(), IsEqual.equalTo(VersionRange.INFINITE_RANGE));
       assertThat(requirement.isOptional(), IsEqual.equalTo(true));
+   }
+   
+   @Test
+   public void testPackageImportWithRecommendedVersion()
+   {
+      final BundleManifest manifestA = createManifest("a", "1");
+      addPackageExport(manifestA, "package.a", "4");
+      save(manifestA);
+
+      final BundleManifest manifestB = createManifest("b", "2");
+      addPackageImport(manifestB, "package.a", "3");
+      save(manifestB);
+
+      final State state = createState(manifestA, manifestB);
+      state.resolve(false);
+
+      BundleDescription bundleA = getBundle(state, "a");
+      BundleDescription bundleB = getBundle(state, "b");
+
+      Collection<Requirement> requirements = collector.collectRequirements(bundleB);
+      assertThat(requirements.size(), Is.is(1));
+
+      Requirement requirement = requirements.iterator().next();
+      assertThat(requirement.getFrom(), IsEqual.equalTo(bundleB));
+      assertThat(requirement.getTo(), IsEqual.equalTo(bundleA));
+      assertThat(requirement.getVersionRange(), IsEqual.equalTo(VersionRange.parse("3.0.0")));
+      assertThat(requirement.isOptional(), IsEqual.equalTo(false));
    }
 
    @Test

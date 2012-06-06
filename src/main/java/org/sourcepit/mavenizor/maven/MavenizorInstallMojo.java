@@ -6,110 +6,51 @@
 
 package org.sourcepit.mavenizor.maven;
 
-import static org.sourcepit.common.utils.io.IOResources.buffOut;
-import static org.sourcepit.common.utils.io.IOResources.fileOut;
-
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 
 import javax.inject.Inject;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.InvalidRepositoryException;
 import org.apache.maven.artifact.installer.ArtifactInstallationException;
 import org.apache.maven.artifact.installer.ArtifactInstaller;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.ModelWriter;
-import org.apache.maven.repository.RepositorySystem;
-import org.sourcepit.common.maven.model.MavenArtifact;
-import org.sourcepit.common.utils.io.IOOperation;
 import org.sourcepit.common.utils.lang.Exceptions;
-import org.sourcepit.mavenizor.Mavenizor.Result;
 
 /**
- * @requiresDependencyResolution compile
+ * @requiresDependencyResolution test
  * @goal install-bundles
  * @phase install
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
-public class MavenizorInstallMojo extends MavenizorMojo
+public class MavenizorInstallMojo extends AbstractDistributingMavenizorMojo
 {
    @Inject
    private ArtifactInstaller installer;
 
-   @Inject
-   private RepositorySystem repositorySystem;
-
-   @Inject
-   private ArtifactRepositoryLayout repositoryLayout;
-
-   @Inject
-   private ModelWriter modelWriter;
-
-   /** @parameter expression="${localRepository}" */
-   protected ArtifactRepository localRepository;
-
    @Override
-   protected void postProcess(Result result)
+   protected AbstractDistributionHandler getDistributionHandler()
    {
-      try
+      final ArtifactRepository localRepository = getLocalRepository();
+      return new AbstractDistributionHandler(logger)
       {
-         localRepository = repositorySystem.createLocalRepository(new File(work, "repo"));
-      }
-      catch (InvalidRepositoryException e)
-      {
-         throw Exceptions.pipe(e);
-      }
-
-      for (ArtifactBundle artifactBundle : result.getGAVToMavenArtifactBundleMap().values())
-      {
-         final Model pom = artifactBundle.getPom();
-
-         final Artifact pomArtifact = createArtifact(pom, "pom");
-
-         final File pomFile = new File(work, repositoryLayout.pathOf(pomArtifact));
-         new IOOperation<OutputStream>(buffOut(fileOut(pomFile, true)))
+         @Override
+         protected void doDistribute(Artifact artifact)
          {
-            @Override
-            protected void run(OutputStream outputStream) throws IOException
+            try
             {
-               modelWriter.write(outputStream, null, pom);
+               installer.install(artifact.getFile(), artifact, localRepository);
             }
-         }.run();
-         install(pomFile, pomArtifact);
-
-         for (MavenArtifact mavenArtifact : artifactBundle.getArtifacts())
-         {
-            final Artifact artifact = createArtifact(pom, mavenArtifact.getClassifier(), mavenArtifact.getType());
-            install(mavenArtifact.getFile(), artifact);
-
+            catch (ArtifactInstallationException e)
+            {
+               throw Exceptions.pipe(e);
+            }
          }
-      }
-   }
 
-   private void install(final File file, final Artifact artifact)
-   {
-      try
-      {
-         installer.install(file, artifact, localRepository);
-      }
-      catch (ArtifactInstallationException e)
-      {
-         throw Exceptions.pipe(e);
-      }
-   }
-
-   private Artifact createArtifact(final Model model, String packaging)
-   {
-      return repositorySystem.createArtifact(model.getGroupId(), model.getArtifactId(), model.getVersion(), packaging);
-   }
-
-   private Artifact createArtifact(final Model model, String classifier, String type)
-   {
-      return repositorySystem.createArtifactWithClassifier(model.getGroupId(), model.getArtifactId(),
-         model.getVersion(), type, classifier);
+         @Override
+         protected boolean existsInTarget(Artifact artifact)
+         {
+            return new File(localRepository.getBasedir(), localRepository.pathOf(artifact)).exists();
+         }
+      };
    }
 }

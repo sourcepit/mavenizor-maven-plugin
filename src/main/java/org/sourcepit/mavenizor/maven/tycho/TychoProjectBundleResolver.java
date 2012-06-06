@@ -77,12 +77,23 @@ public class TychoProjectBundleResolver implements BundleResolver
 
       for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(ArtifactKey.TYPE_ECLIPSE_PLUGIN))
       {
-         handler.resolved(artifact.getLocation());
+         ReactorProject mavenProject = artifact.getMavenProject();
+         if (mavenProject == null)
+         {
+            handler.resolved(artifact.getLocation());
+         }
+         else
+         {
+            File projectArtifact = mavenProject.getArtifact();
+            if (projectArtifact == null)
+            {
+               handler.resolved(artifact.getLocation());
+            }
+            else
+            {
+               handler.resolved(projectArtifact);
+            }
+         }
       }
-   }
-
-   public interface Handler
-   {
-      void resolved(File bundleLocation);
    }
 }

@@ -9,9 +9,12 @@ package org.sourcepit.mavenizor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -19,18 +22,58 @@ import org.eclipse.osgi.service.resolver.State;
 import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.mavenizor.maven.ArtifactBundle;
+import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 import org.sourcepit.modeling.common.Annotation;
 
 public interface Mavenizor
 {
+   public enum TargetType
+   {
+      OSGI, JAVA;
+
+      private final String literal;
+
+      private TargetType()
+      {
+         this.literal = name().toLowerCase();
+      }
+
+      public final String literal()
+      {
+         return literal;
+      }
+
+      public static TargetType valueOfLiteral(String literal)
+      {
+         for (TargetType mode : values())
+         {
+            if (mode.literal().equals(literal))
+            {
+               return mode;
+            }
+         }
+         return null;
+      }
+   }
+
    class Request
    {
+      private TargetType targetType;
       private State state;
       private BundleFilter inputFilter;
       private GAVStrategy gavStrategy;
       private PropertiesMap options = new LinkedPropertiesMap();
+
+      public TargetType getTargetType()
+      {
+         return targetType;
+      }
+
+      public void setTargetType(TargetType targetType)
+      {
+         this.targetType = targetType;
+      }
 
       public State getState()
       {
@@ -73,6 +116,7 @@ public interface Mavenizor
       private final List<BundleDescription> inputBundles = new ArrayList<BundleDescription>();
       private final List<BundleDescription> sourceBundles = new ArrayList<BundleDescription>();
       private final Map<BundleDescription, Collection<MavenArtifact>> artifactDescriptors = new HashMap<BundleDescription, Collection<MavenArtifact>>();
+      private final Map<BundleDescription, BundleConverter.Result> converterResults = new LinkedHashMap<BundleDescription, BundleConverter.Result>();
       private final Map<String, ArtifactBundle> mavenArtifactBundles = new HashMap<String, ArtifactBundle>();
 
       public List<BundleDescription> getInputBundles()
@@ -90,9 +134,14 @@ public interface Mavenizor
          return artifactDescriptors;
       }
 
-      public Map<String, ArtifactBundle> getGAVToMavenArtifactBundleMap()
+      public Map<String, ArtifactBundle> getGAVToArtifactBundleMap()
       {
          return mavenArtifactBundles;
+      }
+
+      public Map<BundleDescription, BundleConverter.Result> getBundleToBundleConverterResultMap()
+      {
+         return converterResults;
       }
 
       public Set<ArtifactBundle> getArtifactBundles(BundleDescription bundle)
@@ -114,21 +163,45 @@ public interface Mavenizor
          return artifactBundles;
       }
 
+      public Set<BundleDescription> getBundles(ArtifactBundle artifactBundle)
+      {
+         final Set<BundleDescription> bundles = new HashSet<BundleDescription>();
+         for (Entry<BundleDescription, Collection<MavenArtifact>> entry : getBundleToMavenArtifactsMap().entrySet())
+         {
+            final BundleDescription bundle = entry.getKey();
+            for (MavenArtifact mavenArtifact : entry.getValue())
+            {
+               if (artifactBundle.equals(getArtifactBundle(mavenArtifact, false)))
+               {
+                  bundles.add(bundle);
+                  break;
+               }
+            }
+         }
+         return bundles;
+      }
+
       public ArtifactBundle getArtifactBundle(MavenArtifact artifact, boolean createOnDemand)
       {
          final String gav = createGAV(artifact);
-         ArtifactBundle artifactBundle = getGAVToMavenArtifactBundleMap().get(gav);
-         if (artifactBundle == null)
+         ArtifactBundle artifactBundle = getGAVToArtifactBundleMap().get(gav);
+         if (artifactBundle == null && createOnDemand)
          {
             artifactBundle = new ArtifactBundle();
-            getGAVToMavenArtifactBundleMap().put(gav, artifactBundle);
+            getGAVToArtifactBundleMap().put(gav, artifactBundle);
          }
          return artifactBundle;
       }
 
-      public static String createGAV(MavenArtifact artifact)
+      private String createGAV(MavenArtifact artifact)
       {
-         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+         final StringBuilder sb = new StringBuilder();
+         sb.append(artifact.getGroupId());
+         sb.append(':');
+         sb.append(artifact.getArtifactId());
+         sb.append(':');
+         sb.append(artifact.getVersion());
+         return sb.toString();
       }
 
       public List<MavenArtifact> getEmbeddedArtifacts(BundleDescription bundle)
@@ -154,6 +227,17 @@ public interface Mavenizor
       {
          final Annotation annotation = artifact.getAnnotation("mavenizor");
          return annotation != null && annotation.getData("embeddedArtifact", false);
+      }
+
+
+      public static void markAsMavenized(final MavenArtifact artifact)
+      {
+         artifact.getAnnotation("mavenizor", true).setData("mavenized", true);
+      }
+
+      public static void markAsEmbeddedArtifact(final MavenArtifact artifact)
+      {
+         artifact.getAnnotation("mavenizor", true).setData("embeddedArtifact", true);
       }
    }
 

@@ -6,11 +6,17 @@
 
 package org.sourcepit.mavenizor.maven;
 
+import java.io.File;
+
 import org.apache.maven.execution.MavenSession;
-import org.sourcepit.mavenizor.maven.tycho.TychoProjectBundleResolver.Handler;
 
 
 public interface BundleResolver
 {
+   interface Handler
+   {
+      void resolved(File bundleLocation);
+   }
+   
    void resolve(final MavenSession session, final Handler handler);
 }
