@@ -9,8 +9,7 @@ package org.sourcepit.mavenizor.maven.converter;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.newBundleDescription;
 
 import javax.inject.Inject;
 import javax.validation.ConstraintViolationException;
@@ -19,11 +18,11 @@ import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.junit.Test;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
-import org.sourcepit.guplex.test.GuplexTest;
+import org.sourcepit.mavenizor.AbstractMavenizorTest;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.Request;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
-public class DefaultGAVStrategyTest extends GuplexTest
+public class DefaultGAVStrategyTest extends AbstractMavenizorTest
 {
    @Inject
    private DefaultGAVStrategyFactory factory;
@@ -201,7 +200,7 @@ public class DefaultGAVStrategyTest extends GuplexTest
       BundleDescription bundle = newBundleDescription("foo", "1.0.0.qualifier");
       String mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-SNAPSHOT"));
-      
+
       bundle = newBundleDescription("foo", "1.0.0.20120606-131029-1");
       mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-SNAPSHOT"));
@@ -214,7 +213,7 @@ public class DefaultGAVStrategyTest extends GuplexTest
       bundle = newBundleDescription("foo", "1.0.0.qualifier");
       mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-qualifier"));
-      
+
       bundle = newBundleDescription("foo", "1.0.0.20120606-131029-1");
       mavenVersion = converter.deriveMavenVersion(bundle);
       assertThat(mavenVersion, equalTo("1.0.0-20120606-131029-1"));
@@ -258,30 +257,13 @@ public class DefaultGAVStrategyTest extends GuplexTest
       bundle = newBundleDescription("foo", "1.0.0");
       mavenVersionRange = converter.deriveMavenVersionRange(bundle, VersionRange.parse("[0.0.0.qualifier,1.0.0.foo]"));
       assertThat(mavenVersionRange, equalTo("[0,1]"));
-      
+
       bundle = newBundleDescription("foo", "1.0.0");
       mavenVersionRange = converter.deriveMavenVersionRange(bundle, VersionRange.parse("[0.0.0,1.1.0)"));
       assertThat(mavenVersionRange, equalTo("[0,1.1)"));
-      
+
       bundle = newBundleDescription("foo", "1.0.0");
       mavenVersionRange = converter.deriveMavenVersionRange(bundle, VersionRange.parse("[0.0.0,1.0.1)"));
       assertThat(mavenVersionRange, equalTo("[0,1.0.1)"));
    }
-
-   private static BundleDescription newBundleDescription(String symbolicName)
-   {
-      return newBundleDescription(symbolicName, "1.0.0.qualifier");
-   }
-
-   private static BundleDescription newBundleDescription(String symbolicName, String version)
-   {
-      final BundleDescription bundle = mock(BundleDescription.class);
-      when(bundle.getSymbolicName()).thenReturn(symbolicName);
-      if (version != null)
-      {
-         when(bundle.getVersion()).thenReturn(new org.osgi.framework.Version(version));
-      }
-      return bundle;
-   }
-
 }

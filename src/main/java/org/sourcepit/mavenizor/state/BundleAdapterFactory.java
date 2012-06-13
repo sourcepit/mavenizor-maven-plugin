@@ -36,7 +36,7 @@ public class BundleAdapterFactory extends AbstractAdapterFactory
             if (location != null)
             {
                final File bundleLocation = new File(location);
-               if (bundleLocation.canRead())
+               if (bundleLocation.exists())
                {
                   return (A) bundleLocation;
                }

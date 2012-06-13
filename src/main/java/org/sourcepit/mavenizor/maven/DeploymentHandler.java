@@ -22,6 +22,7 @@ import org.sonatype.aether.spi.connector.ArtifactDownload;
 import org.sonatype.aether.spi.connector.RepositoryConnector;
 import org.sourcepit.common.utils.lang.Exceptions;
 
+@SuppressWarnings("deprecation")
 public final class DeploymentHandler extends AbstractDistributionHandler
 {
    private final RemoteRepositoryManager remoteRepositoryManager;
@@ -63,8 +64,7 @@ public final class DeploymentHandler extends AbstractDistributionHandler
        * NOTE: This provides backward-compat with maven-deploy-plugin:2.4 which bypasses the repository factory
        * when using an alternative deployment location.
        */
-      if (deploymentRepository instanceof DefaultArtifactRepository
-         && deploymentRepository.getAuthentication() == null)
+      if (deploymentRepository instanceof DefaultArtifactRepository && deploymentRepository.getAuthentication() == null)
       {
          remoteRepo.setAuthentication(repositorySession.getAuthenticationSelector().getAuthentication(remoteRepo));
          remoteRepo.setProxy(repositorySession.getProxySelector().getProxy(remoteRepo));

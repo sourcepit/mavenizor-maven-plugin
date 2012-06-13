@@ -24,7 +24,7 @@ import org.apache.maven.repository.RepositorySystem;
 import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.io.IOOperation;
 import org.sourcepit.mavenizor.ArtifactBundle;
-import org.sourcepit.mavenizor.Mavenizor.Result;
+import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 
 @Named
 public class ArtifactBundleDistributor
@@ -47,10 +47,11 @@ public class ArtifactBundleDistributor
       boolean forceOverwrite)
    {
       boolean pomDistributed = false;
-      for (MavenArtifact mavenArtifact : artifactBundle.getArtifacts())
+      for (ConvertedArtifact cArtifact : artifactBundle.getArtifacts())
       {
-         if (Result.isMavenized(mavenArtifact))
+         if (cArtifact.isMavenized())
          {
+            MavenArtifact mavenArtifact = cArtifact.getMavenArtifact();
             final Model pom = artifactBundle.getPom();
             if (!pomDistributed)
             {

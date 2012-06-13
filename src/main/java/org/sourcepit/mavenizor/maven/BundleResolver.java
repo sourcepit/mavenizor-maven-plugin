@@ -17,6 +17,6 @@ public interface BundleResolver
    {
       void resolved(File bundleLocation);
    }
-   
+
    void resolve(final MavenSession session, final Handler handler);
 }

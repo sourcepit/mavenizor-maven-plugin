@@ -48,7 +48,7 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
       final DistributionHandler handler = getDistributionHandler();
       final Set<ArtifactBundle> scopeProject = new LinkedHashSet<ArtifactBundle>();
       final Set<ArtifactBundle> scopeDependency = new LinkedHashSet<ArtifactBundle>();
-      for (ArtifactBundle artifactBundle : result.getGAVToArtifactBundleMap().values())
+      for (ArtifactBundle artifactBundle : result.getArtifactBundles())
       {
          if (isInProjectScope(result, artifactBundle))
          {

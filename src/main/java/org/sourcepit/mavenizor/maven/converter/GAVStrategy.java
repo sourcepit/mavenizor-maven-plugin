@@ -15,7 +15,7 @@ public interface GAVStrategy
    String deriveGroupId(BundleDescription bundle);
 
    String deriveArtifactId(BundleDescription bundle);
-   
+
    String deriveArtifactId(BundleDescription bundle, Path libraryEntry);
 
    String deriveMavenVersion(BundleDescription bundle);

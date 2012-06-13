@@ -7,41 +7,29 @@
 package org.sourcepit.mavenizor.state;
 
 import static org.junit.Assert.assertThat;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.addBundleRequirement;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.addPackageExport;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.addPackageImport;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.getBundle;
+import static org.sourcepit.mavenizor.MavenizorTestHarness.newManifest;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Dictionary;
-import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
-import org.eclipse.osgi.service.resolver.StateObjectFactory;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.Test;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
-import org.sourcepit.common.manifest.osgi.BundleManifestFactory;
-import org.sourcepit.common.manifest.osgi.BundleRequirement;
-import org.sourcepit.common.manifest.osgi.PackageExport;
-import org.sourcepit.common.manifest.osgi.PackageImport;
-import org.sourcepit.common.manifest.osgi.Parameter;
-import org.sourcepit.common.manifest.osgi.ParameterType;
-import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
-import org.sourcepit.common.manifest.osgi.resource.BundleManifestResourceImpl;
-import org.sourcepit.common.maven.testing.EmbeddedMavenEnvironmentTest;
-import org.sourcepit.common.testing.Environment;
-import org.sourcepit.common.utils.lang.Exceptions;
+import org.sourcepit.mavenizor.AbstractMavenizorTest;
+import org.sourcepit.mavenizor.MavenizorTestHarness;
 
-public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTest
+public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
 {
    @Inject
    private DefaultRequirementsCollector collector;
@@ -49,7 +37,7 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testSelfReference()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       addPackageImport(manifestA, "package.a", "[1,2)");
       save(manifestA);
@@ -66,11 +54,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testPackageImport()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null);
       save(manifestB);
 
@@ -93,11 +81,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testPackageImportIsOptional()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null, true);
       save(manifestB);
 
@@ -116,15 +104,15 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
       assertThat(requirement.getVersionRange(), IsEqual.equalTo(VersionRange.INFINITE_RANGE));
       assertThat(requirement.isOptional(), IsEqual.equalTo(true));
    }
-   
+
    @Test
    public void testPackageImportWithRecommendedVersion()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", "3");
       save(manifestB);
 
@@ -147,11 +135,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testPackageImportWithRange()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", "[2,6)");
       save(manifestB);
 
@@ -174,12 +162,12 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testPackageImportWithIntersectedRange()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       addPackageExport(manifestA, "package.b", "4");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", "[2,6)");
       addPackageImport(manifestB, "package.b", "[1,5)");
       save(manifestB);
@@ -203,11 +191,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testBundleRequirement()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addBundleRequirement(manifestB, "a", null);
       save(manifestB);
 
@@ -230,11 +218,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testBundleRequirementIsOptional()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addBundleRequirement(manifestB, "a", null, true);
       save(manifestB);
 
@@ -257,10 +245,10 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testBundleRequirementWithRange()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addBundleRequirement(manifestB, "a", "[1,2)");
       save(manifestB);
 
@@ -283,14 +271,14 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixed()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       save(manifestB);
 
-      final BundleManifest manifestC = createManifest("c", "2");
+      final BundleManifest manifestC = newManifest("c", "2");
       addPackageImport(manifestC, "package.a", null);
       addBundleRequirement(manifestC, "b", null);
       save(manifestC);
@@ -322,11 +310,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundle()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null);
       addBundleRequirement(manifestB, "a", null);
       save(manifestB);
@@ -350,11 +338,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundleWithRange()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null);
       addBundleRequirement(manifestB, "a", "[1,2)");
       save(manifestB);
@@ -378,11 +366,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundleWithRange2()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", "[1,1.2)");
       addBundleRequirement(manifestB, "a", "[1,2)");
       save(manifestB);
@@ -406,11 +394,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundleIsOptional()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null, true);
       addBundleRequirement(manifestB, "a", null, false);
       save(manifestB);
@@ -434,11 +422,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundleIsOptional2()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null, false);
       addBundleRequirement(manifestB, "a", null, true);
       save(manifestB);
@@ -462,11 +450,11 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
    @Test
    public void testMixedToSameBundleIsOptional3()
    {
-      final BundleManifest manifestA = createManifest("a", "1");
+      final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
 
-      final BundleManifest manifestB = createManifest("b", "2");
+      final BundleManifest manifestB = newManifest("b", "2");
       addPackageImport(manifestB, "package.a", null, true);
       addBundleRequirement(manifestB, "a", null, true);
       save(manifestB);
@@ -487,141 +475,16 @@ public class DefaultRequirementsCollectorTest extends EmbeddedMavenEnvironmentTe
       assertThat(requirement.isOptional(), IsEqual.equalTo(true));
    }
 
-   private static BundleManifest createManifest(String symbolicName, String version)
-   {
-      final BundleManifest manifest = BundleManifestFactory.eINSTANCE.createBundleManifest();
-      manifest.setBundleSymbolicName(symbolicName);
-      manifest.setBundleVersion(version);
-      return manifest;
-   }
-
-   private static BundleDescription getBundle(State state, String symbolicName)
-   {
-      final BundleDescription[] bundles = state.getBundles(symbolicName);
-      assertThat(bundles.length, Is.is(1));
-      return bundles[0];
-   }
 
    private State createState(BundleManifest... manifests)
    {
-      final StateObjectFactory stateFactory = StateObjectFactory.defaultFactory;
-      final State state = stateFactory.createState(true);
-
-      for (BundleManifest manifest : manifests)
-      {
-         final Dictionary<String, String> headers = toDictionary(manifest);
-         final String symbolicName = manifest.getBundleSymbolicName().getSymbolicName();
-         final String location = new File(getWs().getRoot(), symbolicName).getAbsolutePath();
-         try
-         {
-            final BundleDescription bundle = stateFactory.createBundleDescription(state, headers, location,
-               state.getHighestBundleId() + 1L);
-            state.addBundle(bundle);
-         }
-         catch (BundleException e)
-         {
-            throw Exceptions.pipe(e);
-         }
-      }
-
-      return state;
-   }
-
-   private static Dictionary<String, String> toDictionary(final BundleManifest manifest)
-   {
-      final Dictionary<String, String> headers = new Hashtable<String, String>(manifest.getHeaders().size());
-      for (Entry<String, String> header : manifest.getHeaders())
-      {
-         headers.put(header.getKey(), header.getValue());
-      }
-      return headers;
+      final File bundlesDir = getWs().getRoot();
+      return MavenizorTestHarness.newState(bundlesDir, manifests);
    }
 
    private void save(BundleManifest manifest)
    {
-      try
-      {
-         Resource eResource = manifest.eResource();
-         if (eResource == null)
-         {
-            final File file = getWs().newFile(
-               manifest.getBundleSymbolicName().getSymbolicName() + "/META-INF/MANIFEST.MF");
-            final URI uri = URI.createFileURI(file.getAbsolutePath());
-            eResource = new BundleManifestResourceImpl(uri);
-            eResource.getContents().add(manifest);
-         }
-         eResource.save(null);
-      }
-      catch (Exception e)
-      {
-         throw Exceptions.pipe(e);
-      }
+      final File bundlesDir = getWs().getRoot();
+      MavenizorTestHarness.newBundle(bundlesDir, manifest);
    }
-
-   private static void addBundleRequirement(BundleManifest bundle, String symbolicName, String versionRange)
-   {
-      addBundleRequirement(bundle, symbolicName, versionRange, false);
-   }
-
-   private static void addBundleRequirement(BundleManifest bundle, String symbolicName, String versionRange,
-      boolean optional)
-   {
-      final BundleRequirement bundleRequirement = BundleManifestFactory.eINSTANCE.createBundleRequirement();
-      bundleRequirement.getSymbolicNames().add(symbolicName);
-      if (versionRange != null)
-      {
-         bundleRequirement.setBundleVersion(VersionRange.parse(versionRange));
-      }
-      if (optional)
-      {
-         final Parameter parameter = BundleManifestFactory.eINSTANCE.createParameter();
-         parameter.setName(Constants.RESOLUTION_DIRECTIVE);
-         parameter.setValue(Constants.RESOLUTION_OPTIONAL);
-         parameter.setType(ParameterType.DIRECTIVE);
-         bundleRequirement.getParameters().add(parameter);
-      }
-      bundle.getRequireBundle(true).add(bundleRequirement);
-   }
-
-   private static void addPackageExport(BundleManifest bundle, String packageName, String version)
-   {
-      final PackageExport packageExport = BundleManifestFactory.eINSTANCE.createPackageExport();
-      packageExport.getPackageNames().add(packageName);
-      if (version != null)
-      {
-         packageExport.setVersion(Version.parse(version));
-      }
-      bundle.getExportPackage(true).add(packageExport);
-   }
-
-   private static void addPackageImport(BundleManifest bundle, String packageName, String versionRange)
-   {
-      addPackageImport(bundle, packageName, versionRange, false);
-   }
-
-   private static void addPackageImport(BundleManifest bundle, String packageName, String versionRange, boolean optional)
-   {
-      final PackageImport packageImport = BundleManifestFactory.eINSTANCE.createPackageImport();
-      packageImport.getPackageNames().add(packageName);
-      if (versionRange != null)
-      {
-         packageImport.setVersion(VersionRange.parse(versionRange));
-      }
-      if (optional)
-      {
-         final Parameter parameter = BundleManifestFactory.eINSTANCE.createParameter();
-         parameter.setName(Constants.RESOLUTION_DIRECTIVE);
-         parameter.setValue(Constants.RESOLUTION_OPTIONAL);
-         parameter.setType(ParameterType.DIRECTIVE);
-         packageImport.getParameters().add(parameter);
-      }
-      bundle.getImportPackage(true).add(packageImport);
-   }
-
-   @Override
-   protected Environment newEnvironment()
-   {
-      return Environment.get("env-it.properties");
-   }
-
 }

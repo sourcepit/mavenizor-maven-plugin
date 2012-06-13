@@ -14,12 +14,11 @@ import static org.sourcepit.common.utils.io.IOResources.fileIn;
 import static org.sourcepit.common.utils.io.IOResources.fileOut;
 import static org.sourcepit.common.utils.io.IOResources.osgiIn;
 import static org.sourcepit.common.utils.io.IOResources.zipIn;
-import static org.sourcepit.mavenizor.Mavenizor.Result.markAsEmbeddedArtifact;
-import static org.sourcepit.mavenizor.Mavenizor.Result.markAsMavenized;
-import static org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction.Action.AUTO_DETECT;
-import static org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction.Action.IGNORE;
-import static org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction.Action.MAVENIZE;
-import static org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction.Action.REPLACE;
+import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.AUTO_DETECT;
+import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.IGNORE;
+import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.MAVENIZE;
+import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.OMIT;
+import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.REPLACE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,8 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -43,19 +43,30 @@ import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.manifest.osgi.ClassPathEntry;
 import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.maven.model.MavenModelFactory;
+import org.sourcepit.common.utils.file.FileUtils;
+import org.sourcepit.common.utils.file.FileVisitor;
 import org.sourcepit.common.utils.io.DualIOOperation;
 import org.sourcepit.common.utils.io.IOOperation;
 import org.sourcepit.common.utils.io.IOResource;
 import org.sourcepit.common.utils.lang.PipedIOException;
 import org.sourcepit.common.utils.path.Path;
+import org.sourcepit.common.utils.path.PathUtils;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.common.utils.xml.XmlUtils;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
+import org.w3c.dom.Document;
 
 @Named
 public class DefaultBundleConverter implements BundleConverter
 {
+   private static final Set<String> SUPPORTED_PACKAGINGS = new HashSet<String>();
+   static
+   {
+      SUPPORTED_PACKAGINGS.add("jar");
+   }
+
    private final Logger log;
 
    @Inject
@@ -64,34 +75,104 @@ public class DefaultBundleConverter implements BundleConverter
       this.log = log;
    }
 
-   public Result toMavenArtifacts(TargetType mode, BundleDescription bundle, GAVStrategy gavStrategy,
-      PropertiesMap options)
+   private ConvertedArtifact newConvertedArtifact(MavenArtifact mavenArtifact, ConvertionDirective directive,
+      boolean embeddedLibrary)
    {
-      // allow re-write
-      final List<MavenArtifact> replacement = replaceWithExistingMavenArtifacts(bundle, gavStrategy, options);
-      if (replacement != null)
+      return new ConvertedArtifact(mavenArtifact, directive, embeddedLibrary);
+   }
+
+   public Result toMavenArtifacts(Request request)
+   {
+      final BundleDescription bundle = request.getBundle();
+      final ConverterAction bundleAction = determineLibraryAction(bundle, null, request.getOptions());
+      switch (bundleAction.getDirective())
       {
-         final Result result = new Result();
-         result.getMavenArtifacts().addAll(replacement);
-         return result;
+         case IGNORE :
+            return caseIgnore(bundle);
+         case REPLACE :
+            return caseReplace(bundle, bundleAction.getReplacement());
+         case AUTO_DETECT :
+            return caseAutoDetect(request);
+         case OMIT :
+            return caseOmit(request);
+         case MAVENIZE :
+            return caseMavenize(request);
+         default :
+            throw new IllegalStateException();
       }
+   }
 
-      final Result result = new Result();
+   private Result caseOmit(Request request)
+   {
+      final BundleDescription bundle = request.getBundle();
+      log.info(bundle + " (omitted)");
 
-      processEmbeddedLibraries(mode, bundle, gavStrategy, options, result);
-
-      final boolean hasEmbeddedArtifacts = result.getMavenArtifacts().size() > 0;
-      final boolean omit = hasEmbeddedArtifacts ? isOmitMainBundle(bundle, options) : false;
-      if (omit)
+      final Result result = new Result(bundle, OMIT);
+      final List<Path> libEntries = getEmbeddedLibEntries(bundle);
+      libEntries.remove(new Path("."));
+      if (!libEntries.isEmpty())
       {
-         log.info("Omitting enclosing bundle");
+         processEmbeddedLibraries(request, libEntries, result);
+      }
+      return result;
+   }
+
+   private Result caseMavenize(Request request)
+   {
+      final BundleDescription bundle = request.getBundle();
+
+      final List<Path> libEntries = getEmbeddedLibEntries(bundle);
+
+      final boolean hasEmbeddedArtifacts = libEntries.size() > 0;
+      final boolean hasDotOnCP = libEntries.remove(new Path("."));
+
+      final boolean autoOmit = request.getTargetType() == TargetType.JAVA && hasEmbeddedArtifacts && !hasDotOnCP;
+
+      Result result;
+      if (autoOmit)
+      {
+         log.info(bundle + " (auto omitted)");
+         result = new Result(bundle, OMIT);
       }
       else
       {
-         final MavenArtifact mainArtifact = toMainMavenArtifact(bundle, gavStrategy);
-         result.getMavenArtifacts().add(0, mainArtifact);
+         final MavenArtifact mainArtifact = toMainMavenArtifact(bundle, request.getGAVStrategy());
+         log.info(bundle + " -> " + toArtifactKey(mainArtifact) + " (mavenized)");
+         result = new Result(bundle, MAVENIZE);
+         result.getConvertedArtifacts().add(newConvertedArtifact(mainArtifact, MAVENIZE, false));
       }
+      if (hasEmbeddedArtifacts)
+      {
+         processEmbeddedLibraries(request, libEntries, result);
+      }
+      return result;
+   }
 
+   private Result caseAutoDetect(Request request)
+   {
+      final BundleDescription bundle = request.getBundle();
+      final MavenArtifact artifact = detectMavenArtifact(bundle);
+      if (artifact != null)
+      {
+         log.info(bundle + " -> " + toArtifactKey(artifact) + " (detected)");
+         final Result result = new Result(bundle, AUTO_DETECT);
+         result.getConvertedArtifacts().add(newConvertedArtifact(artifact, AUTO_DETECT, false));
+         return result;
+      }
+      return caseMavenize(request); // fallback
+   }
+
+   private Result caseIgnore(final BundleDescription bundle)
+   {
+      log.info(bundle + " (ignored)");
+      return new Result(bundle, IGNORE);
+   }
+
+   private Result caseReplace(final BundleDescription bundle, MavenArtifact replacement)
+   {
+      log.info(bundle + " -> " + toArtifactKey(replacement) + " (mapped)");
+      final Result result = new Result(bundle, REPLACE);
+      result.getConvertedArtifacts().add(newConvertedArtifact(replacement, REPLACE, false));
       return result;
    }
 
@@ -103,69 +184,60 @@ public class DefaultBundleConverter implements BundleConverter
       artifact.setVersion(converter.deriveMavenVersion(bundle));
       artifact.setFile(getBundleLocation(bundle));
 
-      markAsMavenized(artifact);
-
       return artifact;
    }
 
-   private void processEmbeddedLibraries(TargetType targetType, BundleDescription bundle, GAVStrategy converter,
-      PropertiesMap options, Result result)
+   private void processEmbeddedLibraries(Request request, List<Path> libEntries, Result result)
    {
-      final List<Path> libEntries = getEmbeddedLibEntries(bundle);
-      libEntries.remove(new Path("."));
-
-      final boolean hasLibEntries = libEntries.size() > 0;
-      if (hasLibEntries)
+      final TargetType targetType = request.getTargetType();
+      switch (targetType)
       {
-         switch (targetType)
-         {
-            case OSGI :
-               log.info("Detected embedded libraries in " + getBundleLocation(bundle));
-               break;
-            case JAVA :
-               log.info("Processing embedded libraries...");
-               for (Path libEntry : libEntries)
-               {
-                  processEmbeddedLibrary(bundle, libEntry, converter, options, result);
-               }
-               break;
-            default :
-               throw new IllegalStateException("Unsupported target type " + targetType);
-         }
+         case OSGI :
+            log.info("Detected embedded libraries in " + getBundleLocation(request.getBundle()));
+            break;
+         case JAVA :
+            for (Path libEntry : libEntries)
+            {
+               processEmbeddedLibrary(request, libEntry, result);
+            }
+            break;
+         default :
+            throw new IllegalStateException("Unsupported target type " + targetType);
       }
-
    }
 
-   private void processEmbeddedLibrary(BundleDescription bundle, Path libEntry, GAVStrategy converter,
-      PropertiesMap options, Result result)
+   private void processEmbeddedLibrary(Request request, Path libEntry, Result result)
    {
-      final EmbeddedLibraryAction libAction = determineEmbeddedLibraryAction(bundle, libEntry, options);
-      switch (libAction.getAction())
+      final BundleDescription bundle = request.getBundle();
+      final ConverterAction libAction = determineLibraryAction(bundle, libEntry, request.getOptions());
+      final ConvertionDirective directive = libAction.getDirective();
+      switch (directive)
       {
+         case OMIT :
          case IGNORE :
-            log.info(libEntry + " (ignored)");
+            log.info(bundle + "/" + libEntry + " (ignored)");
             break;
          case AUTO_DETECT :
          case MAVENIZE :
-            final boolean autoDetect = libAction.getAction() == AUTO_DETECT;
-            mavenizeEmbeddedLibrary(bundle, libEntry, autoDetect, converter, options, result);
+            final boolean autoDetect = directive == AUTO_DETECT;
+            mavenizeEmbeddedLibrary(request, libEntry, autoDetect, result);
             break;
          case REPLACE :
             final MavenArtifact replacement = libAction.getReplacement();
-            log.info(libEntry + " -> " + toArtifactKey(replacement) + " (mapped)");
-            result.getMavenArtifacts().add(replacement);
+            log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(replacement) + " (mapped)");
+            result.getConvertedArtifacts().add(newConvertedArtifact(replacement, directive, true));
             break;
          default :
             throw new IllegalStateException();
       }
    }
 
-   private void mavenizeEmbeddedLibrary(BundleDescription bundle, Path libEntry, boolean autoDetect,
-      GAVStrategy converter, PropertiesMap options, Result result)
+   private void mavenizeEmbeddedLibrary(Request request, Path libEntry, boolean autoDetect, Result result)
    {
+      final BundleDescription bundle = request.getBundle();
       final File bundleLocation = getBundleLocation(bundle);
 
-      final File workingDir = getWorkingDir(options);
+      final File workingDir = request.getWorkingDirectory();
       final File bundleWorkingDir = new File(workingDir, bundle.toString());
       final File libFile = new File(bundleWorkingDir, libEntry.toString());
 
@@ -180,24 +252,22 @@ public class DefaultBundleConverter implements BundleConverter
             }
             else
             {
-               log.info(libEntry + " -> " + toArtifactKey(artifact) + " (detected)");
-               result.getMavenArtifacts().add(artifact);
+               log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (detected)");
+               result.getConvertedArtifacts().add(newConvertedArtifact(artifact, AUTO_DETECT, true));
             }
          }
          else
          {
-            MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
-            artifact.setGroupId(converter.deriveGroupId(bundle));
-            artifact.setArtifactId(converter.deriveArtifactId(bundle, libEntry));
-            artifact.setVersion(converter.deriveMavenVersion(bundle));
+            final GAVStrategy gav = request.getGAVStrategy();
+
+            final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+            artifact.setGroupId(gav.deriveGroupId(bundle));
+            artifact.setArtifactId(gav.deriveArtifactId(bundle, libEntry));
+            artifact.setVersion(gav.deriveMavenVersion(bundle));
             artifact.setFile(libFile);
 
-            markAsMavenized(artifact);
-            markAsEmbeddedArtifact(artifact);
-
-            log.info(libEntry + " -> " + toArtifactKey(artifact) + " (mavenized)");
-
-            result.getMavenArtifacts().add(artifact);
+            log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (mavenized)");
+            result.getConvertedArtifacts().add(newConvertedArtifact(artifact, MAVENIZE, true));
          }
       }
       else
@@ -206,7 +276,95 @@ public class DefaultBundleConverter implements BundleConverter
       }
    }
 
+   private static MavenArtifact detectMavenArtifact(BundleDescription bundle)
+   {
+      final PropertiesMap pomProperties = loadPomProperties(bundle);
+      return toMavenArtifact(pomProperties, getBundleLocation(bundle));
+   }
+
    private static MavenArtifact detectMavenArtifact(final File libFile)
+   {
+      final PropertiesMap pomProperties = loadPomProperties(libFile);
+      return toMavenArtifact(pomProperties, libFile);
+   }
+
+   private static MavenArtifact toMavenArtifact(final PropertiesMap pomProperties, final File artifactFile)
+   {
+      if (pomProperties.isEmpty())
+      {
+         return null;
+      }
+
+      final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+      artifact.setGroupId(pomProperties.get("groupId"));
+      artifact.setArtifactId(pomProperties.get("artifactId"));
+      artifact.setVersion(pomProperties.get("version"));
+      artifact.setFile(artifactFile);
+
+      final String packaging = determineMavenPackaging(artifact);
+      if (SUPPORTED_PACKAGINGS.contains(packaging))
+      {
+         return artifact;
+      }
+      return null;
+   }
+
+   private static String determineMavenPackaging(final MavenArtifact artifact)
+   {
+      final String[] packaging = new String[1];
+      final String pomPath = "META-INF/maven/" + artifact.getGroupId() + "/" + artifact.getArtifactId() + "/pom.xml";
+      IOOperation<InputStream> ioop = new IOOperation<InputStream>(osgiIn(artifact.getFile(), pomPath))
+      {
+         @Override
+         protected void run(InputStream inputStream) throws IOException
+         {
+            Document document = XmlUtils.readXml(inputStream);
+            String result = XmlUtils.queryText(document, "/project/packaging");
+            packaging[0] = "".equals(result) ? null : result;
+         }
+      };
+      try
+      {
+         ioop.run();
+      }
+      catch (PipedIOException e)
+      {
+         if (e.adapt(FileNotFoundException.class) != null)
+         {
+            return null;
+         }
+         throw e;
+      }
+      return packaging[0] == null ? "jar" : packaging[0];
+   }
+
+   private static PropertiesMap loadPomProperties(BundleDescription bundle)
+   {
+      final File bundleLocation = getBundleLocation(bundle);
+      if (bundleLocation.isDirectory())
+      {
+         final PropertiesMap pomProperties = new LinkedPropertiesMap();
+         FileUtils.accept(new File(bundleLocation, "META-INF/maven"), new FileVisitor()
+         {
+            public boolean visit(File file)
+            {
+               final Path path = new Path(PathUtils.getRelativePath(file, bundleLocation, "/"));
+               if (isPomPropertiesPath(path))
+               {
+                  pomProperties.load(file);
+               }
+               return true;
+            }
+         });
+         return pomProperties;
+      }
+      else
+      {
+         return loadPomProperties(bundleLocation);
+      }
+   }
+
+   private static PropertiesMap loadPomProperties(final File libFile)
    {
       final PropertiesMap pomProperties = new LinkedPropertiesMap();
       new IOOperation<ZipInputStream>(zipIn(buffIn(fileIn(libFile))))
@@ -229,30 +387,12 @@ public class DefaultBundleConverter implements BundleConverter
          {
             if (!zipEntry.isDirectory())
             {
-               final String name = zipEntry.getName();
-               if (name.startsWith("META-INF/maven/") && name.endsWith("/pom.properties"))
-               {
-                  final Path path = new Path(zipEntry.getName());
-                  if (path.getSegments().size() == 5)
-                  {
-                     return true;
-                  }
-               }
+               return isPomPropertiesPath(new Path(zipEntry.getName()));
             }
             return false;
          }
       }.run();
-
-      if (pomProperties.isEmpty())
-      {
-         return null;
-      }
-
-      final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      artifact.setGroupId(pomProperties.get("groupId"));
-      artifact.setArtifactId(pomProperties.get("artifactId"));
-      artifact.setVersion(pomProperties.get("version"));
-      return artifact;
+      return pomProperties;
    }
 
    private static File getBundleLocation(BundleDescription bundle)
@@ -295,16 +435,6 @@ public class DefaultBundleConverter implements BundleConverter
       }
    }
 
-   private static File getWorkingDir(Map<String, String> options)
-   {
-      final String path = options.get("workingDir");
-      if (path == null)
-      {
-         throw new IllegalArgumentException("Option workingDir not set");
-      }
-      return new File(path);
-   }
-
    private static List<Path> getEmbeddedLibEntries(BundleDescription bundle)
    {
       final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
@@ -328,41 +458,53 @@ public class DefaultBundleConverter implements BundleConverter
       return jarPaths;
    }
 
-   private List<MavenArtifact> replaceWithExistingMavenArtifacts(BundleDescription bundle, GAVStrategy gavStrategy,
-      PropertiesMap options)
+   private static boolean isPomPropertiesPath(final Path path)
    {
-      return null;
+      final String pathString = path.toString();
+      if (pathString.startsWith("META-INF/maven/") && pathString.endsWith("/pom.properties"))
+      {
+         if (path.getSegments().size() == 5)
+         {
+            return true;
+         }
+      }
+      return false;
    }
 
-   private boolean isOmitMainBundle(BundleDescription enclosingBundle, PropertiesMap options)
+   private ConverterAction determineLibraryAction(BundleDescription bundle, Path libEntry, PropertiesMap options)
    {
-      return options.getBoolean("omitMainBundles", false);
-   }
+      final String libActionProperty;
+      if (libEntry == null)
+      {
+         libActionProperty = determineBundleLibraryActionProperty(bundle, options);
+      }
+      else
+      {
+         libActionProperty = determineEmbeddedLibraryActionProperty(bundle, libEntry, options);
+      }
 
-   private EmbeddedLibraryAction determineEmbeddedLibraryAction(BundleDescription bundle, Path libEntry,
-      PropertiesMap options)
-   {
-      final String libActionProperty = determineEmbeddedLibraryActionProperty(bundle, libEntry, options);
-
-      final EmbeddedLibraryAction libAction;
+      final ConverterAction libAction;
 
       if (AUTO_DETECT.literal().equals(libActionProperty))
       {
-         libAction = new EmbeddedLibraryAction(AUTO_DETECT, null);
+         libAction = new ConverterAction(AUTO_DETECT, null);
+      }
+      else if (OMIT.literal().equals(libActionProperty))
+      {
+         libAction = new ConverterAction(OMIT, null);
       }
       else if (IGNORE.literal().equals(libActionProperty))
       {
-         libAction = new EmbeddedLibraryAction(IGNORE, null);
+         libAction = new ConverterAction(IGNORE, null);
       }
       else if (MAVENIZE.literal().equals(libActionProperty))
       {
-         libAction = new EmbeddedLibraryAction(MAVENIZE, null);
+         libAction = new ConverterAction(MAVENIZE, null);
       }
       else
       {
          final MavenArtifact replacement = parseArtifactKey(libActionProperty);
-         markAsEmbeddedArtifact(replacement);
-         libAction = new EmbeddedLibraryAction(REPLACE, replacement);
+         libAction = new ConverterAction(REPLACE, replacement);
       }
 
       return libAction;
@@ -381,4 +523,20 @@ public class DefaultBundleConverter implements BundleConverter
       }
       return libActionProperty;
    }
+
+   private String determineBundleLibraryActionProperty(BundleDescription bundle, PropertiesMap options)
+   {
+      String libActionProperty = options.get(bundle.getSymbolicName() + "_" + bundle.getVersion());
+      if (libActionProperty == null)
+      {
+         libActionProperty = options.get(bundle.getSymbolicName());
+         if (libActionProperty == null)
+         {
+            return AUTO_DETECT.literal();
+         }
+      }
+      return libActionProperty;
+   }
+
+
 }

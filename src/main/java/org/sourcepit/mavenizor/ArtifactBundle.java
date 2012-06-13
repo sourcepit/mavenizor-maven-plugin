@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.maven.model.Model;
-import org.sourcepit.common.maven.model.MavenArtifact;
+import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 
 /**
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
@@ -19,7 +19,7 @@ public class ArtifactBundle
 {
    private Model pom;
 
-   private final List<MavenArtifact> artifacts = new ArrayList<MavenArtifact>();
+   private final List<ConvertedArtifact> artifacts = new ArrayList<ConvertedArtifact>();
 
    public Model getPom()
    {
@@ -31,7 +31,7 @@ public class ArtifactBundle
       this.pom = pom;
    }
 
-   public List<MavenArtifact> getArtifacts()
+   public List<ConvertedArtifact> getArtifacts()
    {
       return artifacts;
    }

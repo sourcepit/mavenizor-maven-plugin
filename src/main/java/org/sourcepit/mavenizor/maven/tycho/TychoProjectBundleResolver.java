@@ -84,7 +84,7 @@ public class TychoProjectBundleResolver implements BundleResolver
          }
          else
          {
-            File projectArtifact = mavenProject.getArtifact();
+            File projectArtifact = mavenProject.getArtifact(artifact.getClassifier());
             if (projectArtifact == null)
             {
                handler.resolved(artifact.getLocation());

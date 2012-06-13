@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
@@ -34,6 +33,7 @@ import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
 import org.eclipse.tycho.core.osgitools.EclipseFeatureProject;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.slf4j.Logger;
+import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.lang.PipedException;
 import org.sourcepit.common.utils.path.Path;
@@ -46,8 +46,7 @@ import org.sourcepit.mavenizor.Mavenizor.Result;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 import org.sourcepit.mavenizor.maven.BundleResolver.Handler;
 import org.sourcepit.mavenizor.maven.converter.BundleConverter;
-import org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction;
-import org.sourcepit.mavenizor.maven.converter.EmbeddedLibraryAction.Action;
+import org.sourcepit.mavenizor.maven.converter.ConvertionDirective;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
@@ -100,7 +99,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
 
    /** @parameter */
    private TargetType targetType;
-   
+
    private Set<File> bundleLocationsInBuildScope;
 
    @Inject
@@ -130,7 +129,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
          result = doMavenize();
          writePropertyTemplate(result);
 
-         for (BundleConverter.Result converterResult : result.getBundleToBundleConverterResultMap().values())
+         for (BundleConverter.Result converterResult : result.getConverterResults())
          {
             if (!converterResult.getUnhandledEmbeddedLibraries().isEmpty())
             {
@@ -153,24 +152,22 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    {
       final PropertiesMap template = new LinkedPropertiesMap();
 
-      for (Entry<BundleDescription, BundleConverter.Result> entry : result.getBundleToBundleConverterResultMap()
-         .entrySet())
+      for (BundleConverter.Result converterResult : result.getConverterResults())
       {
-         BundleDescription bundle = entry.getKey();
-         BundleConverter.Result converterResult = entry.getValue();
+         final BundleDescription bundle = converterResult.getBundle();
 
          for (Path path : converterResult.getUnhandledEmbeddedLibraries())
          {
             final StringBuilder value = new StringBuilder();
-            for (Action action : EmbeddedLibraryAction.Action.values())
+            for (ConvertionDirective directive : ConvertionDirective.values())
             {
-               switch (action)
+               switch (directive)
                {
                   case REPLACE :
                      value.append("<groupId>:<artifactId>:<type>[:<classifier>]:<version>");
                      break;
                   default :
-                     value.append(action.literal());
+                     value.append(directive.literal());
                      break;
                }
                value.append(" | ");
@@ -196,7 +193,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
             key.append("]/");
             key.append(path);
 
-            template.put(key.toString(), Action.IGNORE.literal());
+            template.put(key.toString(), ConvertionDirective.IGNORE.literal());
          }
       }
 
@@ -234,12 +231,22 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
 
          public boolean accept(BundleDescription bundle)
          {
+            if (isEclipseSourceBundle(bundle))
+            {
+               return true;
+            }
             if (macher == null || macher.isMatch(bundle.getSymbolicName()))
             {
                final File location = BundleAdapterFactory.DEFAULT.adapt(bundle, File.class);
                return getBundleLocationsInBuildScope().contains(location);
             }
             return false;
+         }
+
+         private boolean isEclipseSourceBundle(BundleDescription bundle)
+         {
+            final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
+            return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
          }
       };
    }
@@ -332,7 +339,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
       }
       return bundleLocationsInBuildScope;
    }
-   
+
    private State resolveState(final OsgiStateBuilder stateBuilder)
    {
       // TODO report unresolved requirements
@@ -345,7 +352,6 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    private void populateRequest(final Mavenizor.Request request)
    {
       final PropertiesMap options = request.getOptions();
-      options.put("workingDir", workingDir.getAbsolutePath());
       if (this.options != null)
       {
          options.putAll((Map) this.options);
@@ -364,6 +370,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
          }
       }
 
+      request.setWorkingDirectory(workingDir.getAbsoluteFile());
       request.setTargetType(determineTargetType());
       request.setGAVStrategy(newGAVStrategy());
       request.setInputFilter(newInputFilter());

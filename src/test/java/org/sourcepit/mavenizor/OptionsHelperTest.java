@@ -6,7 +6,9 @@
 
 package org.sourcepit.mavenizor;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,18 +65,18 @@ public class OptionsHelperTest extends GuplexTest
       assertThat(bundleOptions.get("org.sourcepit.bundle_1.0.0.qualifier@foo"), IsEqual.equalTo("2"));
       assertThat(bundleOptions.get("org.sourcepit.bundle@foo"), IsEqual.equalTo("3"));
    }
-   
+
    @Test
    public void testGetBooleanValue()
    {
       BundleDescription bundle = mock(BundleDescription.class);
       when(bundle.getSymbolicName()).thenReturn("org.sourcepit.bundle");
       when(bundle.getVersion()).thenReturn(new Version("1.0.0.qualifier"));
-      
+
       PropertiesMap options = new LinkedPropertiesMap();
       assertFalse(optionsHelper.getBooleanValue(bundle, options, "@foo", false));
       assertTrue(optionsHelper.getBooleanValue(bundle, options, "@foo", true));
-      
+
       options = new LinkedPropertiesMap();
       options.put("@foo", "true");
       options.put("@bar", "false");
@@ -136,12 +138,12 @@ public class OptionsHelperTest extends GuplexTest
       options.put("org.sourcepit.bundle.a_1.0.0.qualifier@foo", "org.sourcepit.bundle.b_1.0.0.qualifier");
       assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
       assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
-      
+
       options = new LinkedPropertiesMap();
       options.put("org.**,!org.sourcepit.bundle.b@foo", "org.sourcepit.bundle.b");
       assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
       assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
-      
+
       options = new LinkedPropertiesMap();
       options.put("org.sourcepit.bundle.a@foo", "!org.sourcepit.bundle.b");
       assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));

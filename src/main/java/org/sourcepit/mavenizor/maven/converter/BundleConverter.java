@@ -6,28 +6,107 @@
 
 package org.sourcepit.mavenizor.maven.converter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
-import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.props.PropertiesMap;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 
 public interface BundleConverter
 {
+   class Request
+   {
+      private BundleDescription bundle;
+      private File workingDir;
+      private TargetType targetType;
+      private GAVStrategy gavStrategy;
+      private PropertiesMap options;
+
+      public TargetType getTargetType()
+      {
+         return targetType;
+      }
+
+      public void setTargetType(TargetType targetType)
+      {
+         this.targetType = targetType;
+      }
+
+      public BundleDescription getBundle()
+      {
+         return bundle;
+      }
+
+      public void setBundle(BundleDescription bundle)
+      {
+         this.bundle = bundle;
+      }
+
+      public GAVStrategy getGAVStrategy()
+      {
+         return gavStrategy;
+      }
+
+      public void setGAVStrategy(GAVStrategy gavStrategy)
+      {
+         this.gavStrategy = gavStrategy;
+      }
+
+      public PropertiesMap getOptions()
+      {
+         return options;
+      }
+
+      public void setOptions(PropertiesMap options)
+      {
+         this.options = options;
+      }
+
+      public File getWorkingDirectory()
+      {
+         return workingDir;
+      }
+
+      public void setWorkingDirectory(File workingDir)
+      {
+         this.workingDir = workingDir;
+      }
+   }
+
    class Result
    {
-      private final List<MavenArtifact> mavenArtifacts = new ArrayList<MavenArtifact>();
+      private final BundleDescription bundle;
+      
+      private final ConvertionDirective convertionDirective;
+
+      private final List<ConvertedArtifact> convertedArtifacts = new ArrayList<ConvertedArtifact>();
 
       private final List<Path> unhandledEmbeddedLibraries = new ArrayList<Path>();
 
       private final List<Path> missingEmbeddedLibraries = new ArrayList<Path>();
 
-      public List<MavenArtifact> getMavenArtifacts()
+      public Result(BundleDescription bundle, ConvertionDirective directive)
       {
-         return mavenArtifacts;
+         this.bundle = bundle;
+         this.convertionDirective = directive;
+      }
+
+      public BundleDescription getBundle()
+      {
+         return bundle;
+      }
+      
+      public ConvertionDirective getConvertionDirective()
+      {
+         return convertionDirective;
+      }
+
+      public List<ConvertedArtifact> getConvertedArtifacts()
+      {
+         return convertedArtifacts;
       }
 
       public List<Path> getUnhandledEmbeddedLibraries()
@@ -41,5 +120,5 @@ public interface BundleConverter
       }
    }
 
-   Result toMavenArtifacts(TargetType targetType, BundleDescription bundle, GAVStrategy converter, PropertiesMap options);
+   Result toMavenArtifacts(Request request);
 }

@@ -46,7 +46,7 @@ public interface GAVStrategyFactory
       private boolean trimQualifiers = false;
 
       private final List<SnapshotRule> additionalSnapshotRules = new ArrayList<SnapshotRule>();
-      
+
       public String getGroupIdPrefix()
       {
          return groupIdPrefix;
@@ -71,12 +71,12 @@ public interface GAVStrategyFactory
       {
          return additionalSnapshotRules;
       }
-      
+
       public boolean isTrimQualifiers()
       {
          return trimQualifiers;
       }
-      
+
       public void setTrimQualifiers(boolean trimQualifiers)
       {
          this.trimQualifiers = trimQualifiers;
