@@ -23,6 +23,7 @@ public class DefaultGAVStrategyFactory implements GAVStrategyFactory
          Collections.addAll(snapshotRules, GAVStrategyFactory.DEFAULT_SNAPSHOT_RULES);
       }
       snapshotRules.addAll(request.getAdditionalSnapshotRules());
-      return new DefaultGAVStrategy(snapshotRules, request.getGroupIdPrefix(), request.isTrimQualifiers());
+      return new DefaultGAVStrategy(snapshotRules, request.getGroupIdPrefix(), request.isTrimQualifiers(),
+         request.getGroup3Prefixes());
    }
 }

@@ -68,6 +68,43 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
 
       bundle = newBundleDescription("org.eclipse.emf.core");
       groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.eclipse"));
+
+      bundle = newBundleDescription("org.eclipse.emf");
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.eclipse"));
+
+      bundle = newBundleDescription("foo.bar.core.bla");
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("foo.bar"));
+
+      bundle = newBundleDescription("foo.bar");
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("foo.bar"));
+
+      bundle = newBundleDescription("foo");
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("foo"));
+   }
+   
+   @Test
+   public void testDeriveGroupIdWithGroup3Prefix()
+   {
+      GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
+      request.getGroup3Prefixes().add("org.eclipse");
+      
+      final GAVStrategy converter = factory.newGAVStrategy(request);
+
+      BundleDescription bundle = newBundleDescription("org.sourcepit.mavenizor.core");
+      String groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.sourcepit.mavenizor"));
+
+      bundle = newBundleDescription("org.sourcepit.mavenizor.core");
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.sourcepit.mavenizor"));
+
+      bundle = newBundleDescription("org.eclipse.emf.core");
+      groupId = converter.deriveGroupId(bundle);
       assertThat(groupId, equalTo("org.eclipse.emf"));
 
       bundle = newBundleDescription("org.eclipse.emf");

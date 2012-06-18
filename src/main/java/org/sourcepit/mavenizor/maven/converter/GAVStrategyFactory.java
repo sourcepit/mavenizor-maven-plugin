@@ -7,6 +7,8 @@
 package org.sourcepit.mavenizor.maven.converter;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.maven.artifact.ArtifactUtils;
@@ -44,6 +46,7 @@ public interface GAVStrategyFactory
       private String groupIdPrefix;
       private boolean useDefaultSnapshotRules = true;
       private boolean trimQualifiers = false;
+      private Collection<String> group3Prefixes = new HashSet<String>();
 
       private final List<SnapshotRule> additionalSnapshotRules = new ArrayList<SnapshotRule>();
 
@@ -80,6 +83,11 @@ public interface GAVStrategyFactory
       public void setTrimQualifiers(boolean trimQualifiers)
       {
          this.trimQualifiers = trimQualifiers;
+      }
+      
+      public Collection<String> getGroup3Prefixes()
+      {
+         return group3Prefixes;
       }
    }
 

@@ -6,6 +6,9 @@
 
 package org.sourcepit.mavenizor.maven.converter;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,19 +26,27 @@ public class DefaultGAVStrategy implements GAVStrategy
 {
    private static final Pattern GROUP_2_PATTERN = Pattern.compile("^(\\w*\\.\\w*)(\\..*)?$");
    private static final Pattern GROUP_3_PATTERN = Pattern.compile("^(\\w*\\.\\w*\\.\\w*)(\\..*)?$");
-   private static final String GROUP_3[] = { "net.sf", "org.apache", "org.codehaus", "org.tigris", "org.sourcepit",
-      "org.eclipse" };
+   private static final String GROUP_3[] = { "net.sf", "org.apache", "org.codehaus", "org.tigris", "org.sourcepit" };
 
    private final List<SnapshotRule> snapshotRules;
    private final String groupIdPrefix;
    private final boolean trimQualifiers;
+   private final Collection<String> group3Prefixes;
 
-   public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules, String groupIdPrefix, boolean trimQualifiers)
+   public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules, String groupIdPrefix, boolean trimQualifiers,
+      Collection<String> group3Prefixes)
    {
       this.snapshotRules = snapshotRules;
       this.groupIdPrefix = groupIdPrefix == null ? null : groupIdPrefix.endsWith(".") ? groupIdPrefix : groupIdPrefix
          + ".";
       this.trimQualifiers = trimQualifiers;
+
+      this.group3Prefixes = new HashSet<String>();
+      Collections.addAll(this.group3Prefixes, GROUP_3);
+      if (group3Prefixes != null)
+      {
+         this.group3Prefixes.addAll(group3Prefixes);
+      }
    }
 
    public String deriveGroupId(@NotNull BundleDescription bundle)
@@ -51,9 +62,10 @@ public class DefaultGAVStrategy implements GAVStrategy
    private String deriveGroupId(@NotNull @Size(min = 1) String symbolicName)
    {
       Matcher m = null;
-      for (int i = 0; i < GROUP_3.length; i++)
+
+      for (String group3Prefix : group3Prefixes)
       {
-         if (symbolicName.startsWith(GROUP_3[i]))
+         if (symbolicName.startsWith(group3Prefix))
          {
             m = GROUP_3_PATTERN.matcher(symbolicName);
          }

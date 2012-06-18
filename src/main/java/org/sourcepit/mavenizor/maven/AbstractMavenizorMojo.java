@@ -87,6 +87,9 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
 
    /** @parameter */
    private String groupIdPrefix;
+   
+   /** @parameter */
+   private Set<String> group3Prefixes;
 
    /** @parameter expression="${dryRun}" default-value=false */
    private boolean dryRun;
@@ -328,6 +331,10 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
       final GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.setGroupIdPrefix(groupIdPrefix);
       request.setTrimQualifiers(trimQualifiers);
+      if (group3Prefixes != null)
+      {
+         request.getGroup3Prefixes().addAll(group3Prefixes);
+      }
       return gavStrategyFactory.newGAVStrategy(request);
    }
 
