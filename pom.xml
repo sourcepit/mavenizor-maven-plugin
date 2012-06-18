@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>org.sourcepit</groupId>
 			<artifactId>slf4j-plexus</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
+			<version>0.1.0-alpha-1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
