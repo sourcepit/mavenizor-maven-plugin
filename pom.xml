@@ -16,6 +16,7 @@
 	<properties>
 		<tests.dir>${project.build.directory}/tests</tests.dir>
 		<tests.user.home>${tests.dir}/user.home</tests.user.home>
+		<tycho.version>0.15.0</tycho.version>
 	</properties>
 
 	<repositories>
@@ -76,17 +77,17 @@
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>tycho-core</artifactId>
-			<version>0.14.1</version>
+			<version>${tycho.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>tycho-p2-facade</artifactId>
-			<version>0.14.1</version>
+			<version>${tycho.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>sisu-equinox-launching</artifactId>
-			<version>0.14.1</version>
+			<version>${tycho.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
