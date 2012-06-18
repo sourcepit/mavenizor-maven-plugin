@@ -13,6 +13,10 @@
 
 	<packaging>maven-plugin</packaging>
 
+	<scm>
+		<connection>scm:git:git@github.com:sourcepit/mavenizor-maven-plugin.git</connection>
+	</scm>
+
 	<properties>
 		<tests.dir>${project.build.directory}/tests</tests.dir>
 		<tests.user.home>${tests.dir}/user.home</tests.user.home>
