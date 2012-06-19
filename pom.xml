@@ -1,10 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.sourcepit</groupId>
 		<artifactId>srcpit-parent</artifactId>
-		<version>5</version>
+		<version>6</version>
 	</parent>
 
 	<artifactId>mavenizor-maven-plugin</artifactId>
@@ -33,7 +34,7 @@
 		<dependency>
 			<groupId>org.sourcepit</groupId>
 			<artifactId>guice-plexus-bridge</artifactId>
-			<version>0.1.0-alpha-3</version>
+			<version>0.1.0-alpha-4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -70,12 +71,12 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-maven</artifactId>
-			<version>0.1.0-alpha-3</version>
+			<version>0.1.0-alpha-4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit</groupId>
 			<artifactId>slf4j-plexus</artifactId>
-			<version>0.1.0-alpha-1</version>
+			<version>0.1.0-alpha-2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
