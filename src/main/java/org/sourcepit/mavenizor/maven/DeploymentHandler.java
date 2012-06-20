@@ -10,6 +10,7 @@ import java.util.Collections;
 
 import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.deployer.ArtifactDeploymentException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -29,23 +30,34 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    private final RepositorySystemSession repositorySession;
    private final ArtifactDeployer deployer;
    private final ArtifactRepository localRepository;
-   private final ArtifactRepository deploymentRepository;
+   private final ArtifactRepository snapshotRepository;
+   private final ArtifactRepository releaseRepository;
 
    public DeploymentHandler(Logger log, RemoteRepositoryManager remoteRepositoryManager,
       RepositorySystemSession repositorySession, ArtifactDeployer deployer, ArtifactRepository localRepository,
-      ArtifactRepository deploymentRepository)
+      ArtifactRepository snapshotRepository, ArtifactRepository releaseRepository)
    {
       super(log);
       this.remoteRepositoryManager = remoteRepositoryManager;
       this.repositorySession = repositorySession;
       this.deployer = deployer;
       this.localRepository = localRepository;
-      this.deploymentRepository = deploymentRepository;
+      this.snapshotRepository = snapshotRepository;
+      this.releaseRepository = releaseRepository;
    }
 
    @Override
    protected void doDistribute(Artifact artifact)
    {
+      final ArtifactRepository deploymentRepository;
+      if (ArtifactUtils.isSnapshot(artifact.getVersion()))
+      {
+         deploymentRepository = snapshotRepository;
+      }
+      else
+      {
+         deploymentRepository = releaseRepository;
+      }
       try
       {
          deployer.deploy(artifact.getFile(), artifact, deploymentRepository, localRepository);
@@ -59,12 +71,12 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    @Override
    protected boolean existsInTarget(Artifact artifact)
    {
-      RemoteRepository remoteRepo = RepositoryUtils.toRepo(deploymentRepository);
+      RemoteRepository remoteRepo = RepositoryUtils.toRepo(snapshotRepository);
       /*
        * NOTE: This provides backward-compat with maven-deploy-plugin:2.4 which bypasses the repository factory
        * when using an alternative deployment location.
        */
-      if (deploymentRepository instanceof DefaultArtifactRepository && deploymentRepository.getAuthentication() == null)
+      if (snapshotRepository instanceof DefaultArtifactRepository && snapshotRepository.getAuthentication() == null)
       {
          remoteRepo.setAuthentication(repositorySession.getAuthenticationSelector().getAuthentication(remoteRepo));
          remoteRepo.setProxy(repositorySession.getProxySelector().getProxy(remoteRepo));

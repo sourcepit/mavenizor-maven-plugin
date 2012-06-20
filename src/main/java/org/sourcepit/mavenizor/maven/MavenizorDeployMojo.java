@@ -15,6 +15,7 @@ import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.sonatype.aether.impl.RemoteRepositoryManager;
+import org.sourcepit.common.maven.util.MavenProjectUtils;
 
 /**
  * @requiresDependencyResolution test
@@ -40,16 +41,38 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
    protected AbstractDistributionHandler getDistributionHandler()
    {
       final ArtifactRepository localRepository = getLocalRepository();
-      final ArtifactRepository deploymentRepository = getDeploymentRepository();
+      final ArtifactRepository deploymentRepository = getAlternateDeploymentRepository();
+      final ArtifactRepository snapshotRepository;
+      final ArtifactRepository releaseRepository;
+      if (deploymentRepository == null)
+      {
+         snapshotRepository = getSnapshotRepository();
+         releaseRepository = getReleaseRepository();
+      }
+      else
+      {
+         snapshotRepository = deploymentRepository;
+         releaseRepository = deploymentRepository;
+      }
       return new DeploymentHandler(logger, remoteRepositoryManager, session.getRepositorySession(), deployer,
-         localRepository, deploymentRepository);
+         localRepository, snapshotRepository, releaseRepository);
    }
 
-   private ArtifactRepository getDeploymentRepository()
+   protected ArtifactRepository getSnapshotRepository()
+   {
+      return MavenProjectUtils.getSnapshotArtifactRepository(project);
+   }
+
+   protected ArtifactRepository getReleaseRepository()
+   {
+      return MavenProjectUtils.getReleaseArtifactRepository(project);
+   }
+
+   protected ArtifactRepository getAlternateDeploymentRepository()
    {
       if (altDeploymentRepository == null)
       {
-         return project.getDistributionManagementArtifactRepository();
+         return null;
       }
       else
       {
