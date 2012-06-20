@@ -336,20 +336,35 @@ public class DefaultMavenizor implements Mavenizor
 
             for (ArtifactBundle artifactBundle : artifactBundles)
             {
-               final Model pom = artifactBundle.getPom();
-               log.info("Attaching source " + sourceBundle + " to " + pom);
+               if (hasMavenizedArtifact(artifactBundle))
+               {
+                  final Model pom = artifactBundle.getPom();
+                  log.info("Attaching source " + sourceBundle + " to " + pom);
 
-               final MavenArtifact sourceArtifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
-               sourceArtifact.setGroupId(pom.getGroupId());
-               sourceArtifact.setArtifactId(pom.getArtifactId());
-               sourceArtifact.setVersion(pom.getVersion());
-               sourceArtifact.setClassifier("sources");
-               sourceArtifact.setFile(sourceJar);
+                  final MavenArtifact sourceArtifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+                  sourceArtifact.setGroupId(pom.getGroupId());
+                  sourceArtifact.setArtifactId(pom.getArtifactId());
+                  sourceArtifact.setVersion(pom.getVersion());
+                  sourceArtifact.setClassifier("sources");
+                  sourceArtifact.setFile(sourceJar);
 
-               artifactBundle.getArtifacts().add(
-                  new ConvertedArtifact(sourceArtifact, ConvertionDirective.MAVENIZE, false));
+                  artifactBundle.getArtifacts().add(
+                     new ConvertedArtifact(sourceArtifact, ConvertionDirective.MAVENIZE, false));
+               }
             }
          }
       }
+   }
+
+   private boolean hasMavenizedArtifact(ArtifactBundle artifactBundle)
+   {
+      for (ConvertedArtifact artifact : artifactBundle.getArtifacts())
+      {
+         if (artifact.isMavenized())
+         {
+            return true;
+         }
+      }
+      return false;
    }
 }
