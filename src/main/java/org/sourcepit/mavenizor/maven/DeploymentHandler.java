@@ -49,15 +49,7 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    @Override
    protected void doDistribute(Artifact artifact)
    {
-      final ArtifactRepository deploymentRepository;
-      if (ArtifactUtils.isSnapshot(artifact.getVersion()))
-      {
-         deploymentRepository = snapshotRepository;
-      }
-      else
-      {
-         deploymentRepository = releaseRepository;
-      }
+      final ArtifactRepository deploymentRepository = determineDeploymentRepository(artifact);
       try
       {
          deployer.deploy(artifact.getFile(), artifact, deploymentRepository, localRepository);
@@ -71,12 +63,14 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    @Override
    protected boolean existsInTarget(Artifact artifact)
    {
-      RemoteRepository remoteRepo = RepositoryUtils.toRepo(snapshotRepository);
+      final ArtifactRepository deploymentRepository = determineDeploymentRepository(artifact);
+
+      final RemoteRepository remoteRepo = RepositoryUtils.toRepo(deploymentRepository);
       /*
        * NOTE: This provides backward-compat with maven-deploy-plugin:2.4 which bypasses the repository factory
        * when using an alternative deployment location.
        */
-      if (snapshotRepository instanceof DefaultArtifactRepository && snapshotRepository.getAuthentication() == null)
+      if (deploymentRepository instanceof DefaultArtifactRepository && deploymentRepository.getAuthentication() == null)
       {
          remoteRepo.setAuthentication(repositorySession.getAuthenticationSelector().getAuthentication(remoteRepo));
          remoteRepo.setProxy(repositorySession.getProxySelector().getProxy(remoteRepo));
@@ -106,5 +100,19 @@ public final class DeploymentHandler extends AbstractDistributionHandler
             connector.close();
          }
       }
+   }
+
+   private ArtifactRepository determineDeploymentRepository(Artifact artifact)
+   {
+      final ArtifactRepository deploymentRepository;
+      if (ArtifactUtils.isSnapshot(artifact.getVersion()))
+      {
+         deploymentRepository = snapshotRepository;
+      }
+      else
+      {
+         deploymentRepository = releaseRepository;
+      }
+      return deploymentRepository;
    }
 }
