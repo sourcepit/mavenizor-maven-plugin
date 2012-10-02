@@ -227,8 +227,17 @@ public class DefaultMavenizor implements Mavenizor
                   dependency.setOptional(true);
                }
 
-               dependency.setVersion(deriveMavenVersionRange(requirement, requiredArtifact.getMavenArtifact(),
-                  request.getGAVStrategy()));
+               final boolean allowVersionRanges = options.getBoolean("allowVersionRanges", false);
+               if (allowVersionRanges)
+               {
+                  dependency.setVersion(deriveMavenVersionRange(requirement, requiredArtifact.getMavenArtifact(),
+                     request.getGAVStrategy()));
+               }
+               else
+               {
+                  dependency.setVersion(requiredArtifact.getMavenArtifact().getVersion());
+               }
+
 
                if (optionsHelper.isMatch(requirement, options, "@requirements.provided"))
                {
