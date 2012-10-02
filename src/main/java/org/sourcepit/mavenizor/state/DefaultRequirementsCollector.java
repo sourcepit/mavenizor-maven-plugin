@@ -6,6 +6,8 @@
 
 package org.sourcepit.mavenizor.state;
 
+import static org.sourcepit.common.manifest.osgi.VersionRange.intersect;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -102,10 +104,21 @@ public class DefaultRequirementsCollector implements RequirementsCollector
          requirement.setOptional(requirement.isOptional() ? optional.booleanValue() : false);
       }
 
-      final VersionRange versionRange = importVersioRange.get(packageName);
-      if (versionRange != null)
+      if (requirement.getVersionRange() != null) // null means invalid
       {
-         requirement.setVersionRange(VersionRange.intersect(requirement.getVersionRange(), versionRange));
+         final VersionRange versionRange = importVersioRange.get(packageName);
+         if (versionRange != null)
+         {
+            try
+            {
+               final VersionRange newRange = intersect(requirement.getVersionRange(), versionRange);
+               requirement.setVersionRange(newRange);
+            }
+            catch (IllegalArgumentException e)
+            {
+               requirement.setVersionRange(null); // invalidate
+            }
+         }
       }
 
       requirements.put(exporter, requirement);
