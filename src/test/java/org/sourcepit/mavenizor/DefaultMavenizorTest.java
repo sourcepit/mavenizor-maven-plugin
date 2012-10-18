@@ -186,6 +186,72 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
+   public void testBundleWithEmbeddedArtifact_AutoOmitBundleAndEmeddedIsMain()
+   {
+      BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
+      File bundleDir = newBundle(bundlesDir, manifest);
+
+      addEmbeddedLibrary(bundleDir, manifest, "z.jar", null);
+      addEmbeddedLibrary(bundleDir, manifest, "a.jar", null);
+
+      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
+      libGav.setGroupId("hans");
+      libGav.setArtifactId("foo");
+      libGav.setVersion("3");
+      addEmbeddedLibrary(bundleDir, manifest, "lib/foo.jar", null);
+
+      State osgiState = newState(bundlesDir, manifest);
+
+      BundleDescription bundle = getBundle(osgiState, "org.sourcepit.testbundle");
+
+      Mavenizor.Request request = newRequest(osgiState, TargetType.JAVA);
+      request.getOptions().put(bundle.getSymbolicName() + "/z.jar", "mavenize");
+      request.getOptions().put(bundle.getSymbolicName() + "/a.jar", "mavenize");
+      request.getOptions().put(bundle.getSymbolicName() + "/lib/foo.jar", "mavenize");
+
+      Mavenizor.Result result = mavenizor.mavenize(request);
+      assertThat(result.getConverterResults().size(), Is.is(1));
+      assertThat(result.getArtifactBundles().size(), Is.is(3));
+      assertThat(result.getArtifactBundles(bundle).size(), Is.is(3));
+
+      ArtifactBundle artifactBundle = result.getArtifactBundles().get(0);
+      assertThat(artifactBundle.getArtifacts().size(), Is.is(1));
+      assertTrue(artifactBundle.getArtifacts().get(0).isEmbeddedLibrary());
+
+      Model pom = artifactBundle.getPom();
+      assertNotNull(pom);
+      assertNotNull(pom.getGroupId());
+      assertThat(pom.getArtifactId(), IsEqual.equalTo("z"));
+      assertNotNull(pom.getVersion());
+      assertThat(pom.getDependencies().size(), Is.is(2));
+
+      assertThat(pom.getDependencies().get(0).getArtifactId(), IsEqual.equalTo("a"));
+      assertThat(pom.getDependencies().get(1).getArtifactId(), IsEqual.equalTo("foo"));
+
+      artifactBundle = result.getArtifactBundles().get(1);
+      assertThat(artifactBundle.getArtifacts().size(), Is.is(1));
+      assertTrue(artifactBundle.getArtifacts().get(0).isEmbeddedLibrary());
+
+      pom = artifactBundle.getPom();
+      assertNotNull(pom);
+      assertNotNull(pom.getGroupId());
+      assertThat(pom.getArtifactId(), IsEqual.equalTo("a"));
+      assertNotNull(pom.getVersion());
+      assertThat(pom.getDependencies().size(), Is.is(0));
+      
+      artifactBundle = result.getArtifactBundles().get(2);
+      assertThat(artifactBundle.getArtifacts().size(), Is.is(1));
+      assertTrue(artifactBundle.getArtifacts().get(0).isEmbeddedLibrary());
+
+      pom = artifactBundle.getPom();
+      assertNotNull(pom);
+      assertNotNull(pom.getGroupId());
+      assertThat(pom.getArtifactId(), IsEqual.equalTo("foo"));
+      assertNotNull(pom.getVersion());
+      assertThat(pom.getDependencies().size(), Is.is(0));
+   }
+
+   @Test
    public void testBundleWithEmbeddedArtifact_IgnoreBundle()
    {
       VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
@@ -297,19 +363,19 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       Dependency dependency = pom.getDependencies().get(0);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("wurst"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("3"));
-      
+
       dependency = pom.getDependencies().get(1);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("embedded2"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("1.0.0-SNAPSHOT"));
    }
-   
+
    @Test
    public void testBundleWithEmbeddedArtifactWithDependencyToBundle() throws IOException
    {
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       newBundle(bundlesDir, manifest1);
       manifest1.eResource().save(null);
-      
+
       BundleManifest manifest2 = newManifest("org.sourcepit.testbundle2", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest2);
       addBundleRequirement(manifest2, manifest1.getBundleSymbolicName().getSymbolicName(), "[1,2)");
@@ -329,11 +395,11 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       Mavenizor.Result result = mavenizor.mavenize(request);
       assertThat(result.getConverterResults().size(), Is.is(2));
       assertThat(result.getArtifactBundles().size(), Is.is(4));
-      
+
       BundleDescription bundle = getBundle(osgiState, manifest2.getBundleSymbolicName().getSymbolicName());
       List<ArtifactBundle> artifactBundles = result.getArtifactBundles(bundle);
       assertThat(artifactBundles.size(), Is.is(3));
-      
+
       ArtifactBundle artifactBundle = artifactBundles.get(0);
       Model pom = artifactBundle.getPom();
       assertNotNull(pom);
@@ -341,19 +407,19 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       assertThat(pom.getArtifactId(), IsEqual.equalTo("org.sourcepit.testbundle2"));
       assertNotNull(pom.getVersion());
       assertThat(pom.getDependencies().size(), Is.is(3));
-      
+
       Dependency dependency = pom.getDependencies().get(0);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("wurst"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("3"));
-      
+
       dependency = pom.getDependencies().get(1);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("embedded2"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("1.0.0-SNAPSHOT"));
-      
+
       dependency = pom.getDependencies().get(2);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("org.sourcepit.testbundle"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("1.0.0-SNAPSHOT"));
-      
+
       artifactBundle = artifactBundles.get(1);
       pom = artifactBundle.getPom();
       assertNotNull(pom);
@@ -361,7 +427,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       assertThat(pom.getArtifactId(), IsEqual.equalTo("wurst"));
       assertNotNull(pom.getVersion());
       assertThat(pom.getDependencies().size(), Is.is(0));
-      
+
       artifactBundle = artifactBundles.get(2);
       pom = artifactBundle.getPom();
       assertNotNull(pom);
@@ -369,12 +435,12 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       assertThat(pom.getArtifactId(), IsEqual.equalTo("embedded2"));
       assertNotNull(pom.getVersion());
       assertThat(pom.getDependencies().size(), Is.is(1));
-      
+
       dependency = pom.getDependencies().get(0);
       assertThat(dependency.getArtifactId(), IsEqual.equalTo("org.sourcepit.testbundle"));
       assertThat(dependency.getVersion(), IsEqual.equalTo("1.0.0-SNAPSHOT"));
    }
-   
+
 
    private Mavenizor.Request newRequest(State osgiState, TargetType targetType)
    {

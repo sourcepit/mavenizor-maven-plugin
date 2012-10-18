@@ -9,6 +9,8 @@ package org.sourcepit.mavenizor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -125,6 +127,9 @@ public class DefaultMavenizor implements Mavenizor
 
       List<Dependency> embeddedDependencies = null;
       List<Dependency> dependencies = null;
+
+      final ConvertedArtifact mainArtifact = determineMainArtifact(artifacts);
+
       for (ConvertedArtifact convertedArtifact : artifacts)
       {
          final ArtifactBundle artifactBundle = result.getArtifactBundle(convertedArtifact);
@@ -142,14 +147,16 @@ public class DefaultMavenizor implements Mavenizor
             artifactBundle.setPom(pom);
          }
 
+
          if (convertedArtifact.isMavenized())
          {
-            if (!convertedArtifact.isEmbeddedLibrary()) // is main bundle
+            if (mainArtifact.equals(convertedArtifact)) // is main bundle
             {
                // add dependencies to embedded bundles
                if (embeddedDependencies == null)
                {
-                  embeddedDependencies = determineEmbeddedDependencies(bundle, request.getOptions(), result);
+                  embeddedDependencies = determineEmbeddedDependencies(bundle, mainArtifact, request.getOptions(),
+                     result);
                }
                pom.getDependencies().addAll(embeddedDependencies);
             }
@@ -164,12 +171,36 @@ public class DefaultMavenizor implements Mavenizor
       }
    }
 
-   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, PropertiesMap options, Result result)
+   private ConvertedArtifact determineMainArtifact(final Collection<ConvertedArtifact> artifacts)
+   {
+      final List<ConvertedArtifact> mavenized = new ArrayList<ConvertedArtifact>();
+      for (ConvertedArtifact convertedArtifact : artifacts)
+      {
+         if (convertedArtifact.isMavenized())
+         {
+            mavenized.add(convertedArtifact);
+         }
+      }
+
+      Collections.sort(mavenized, new Comparator<ConvertedArtifact>()
+      {
+         public int compare(ConvertedArtifact o1, ConvertedArtifact o2)
+         {
+            final int l1 = o1.getMavenArtifact().getFile().getParent().length();
+            final int l2 = o2.getMavenArtifact().getFile().getParent().length();
+            return l1 - l2;
+         }
+      });
+
+      return mavenized.isEmpty() ? null : mavenized.get(0);
+   }
+
+   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, ConvertedArtifact mainArtifact, PropertiesMap options, Result result)
    {
       final List<Dependency> embeddedDependencies = new ArrayList<Dependency>();
       for (ConvertedArtifact convertedArtifact : result.getConvertedArtifacts(bundle))
       {
-         if (convertedArtifact.isEmbeddedLibrary())
+         if (convertedArtifact.isEmbeddedLibrary() && !convertedArtifact.equals(mainArtifact))
          {
             final MavenArtifact embeddedArtifact = convertedArtifact.getMavenArtifact();
 
