@@ -86,13 +86,13 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
       groupId = converter.deriveGroupId(bundle);
       assertThat(groupId, equalTo("foo"));
    }
-   
+
    @Test
    public void testDeriveGroupIdWithGroup3Prefix()
    {
       GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.getGroup3Prefixes().add("org.eclipse");
-      
+
       final GAVStrategy converter = factory.newGAVStrategy(request);
 
       BundleDescription bundle = newBundleDescription("org.sourcepit.mavenizor.core");
@@ -122,6 +122,39 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
       bundle = newBundleDescription("foo");
       groupId = converter.deriveGroupId(bundle);
       assertThat(groupId, equalTo("foo"));
+   }
+
+   @Test
+   public void testGroupIdMapping()
+   {
+      GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
+      request.getGroupIdMappings().put("foo", "org.foo");
+      request.getGroupIdMappings().put("!org.sourcepit.**", "srcpit_${bundle.groupId}");
+
+      GAVStrategy converter = factory.newGAVStrategy(request);
+      
+      BundleDescription bundle = newBundleDescription("org.sourcepit.mavenizor.core");
+      converter.deriveGroupId(bundle);
+      String groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.sourcepit.mavenizor"));
+      
+      bundle = newBundleDescription("org.eclipse.emf.ecore");
+      converter.deriveGroupId(bundle);
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("srcpit_org.eclipse"));
+      
+      bundle = newBundleDescription("foo");
+      converter.deriveGroupId(bundle);
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("org.foo"));
+      
+      request.setGroupIdPrefix("mavenized");
+      converter = factory.newGAVStrategy(request);
+      
+      bundle = newBundleDescription("foo");
+      converter.deriveGroupId(bundle);
+      groupId = converter.deriveGroupId(bundle);
+      assertThat(groupId, equalTo("mavenized.org.foo"));
    }
 
    @Test

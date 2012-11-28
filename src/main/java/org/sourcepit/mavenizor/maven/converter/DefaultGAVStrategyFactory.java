@@ -24,6 +24,6 @@ public class DefaultGAVStrategyFactory implements GAVStrategyFactory
       }
       snapshotRules.addAll(request.getAdditionalSnapshotRules());
       return new DefaultGAVStrategy(snapshotRules, request.getGroupIdPrefix(), request.isTrimQualifiers(),
-         request.getGroup3Prefixes());
+         request.getGroup3Prefixes(), request.getGroupIdMappings());
    }
 }

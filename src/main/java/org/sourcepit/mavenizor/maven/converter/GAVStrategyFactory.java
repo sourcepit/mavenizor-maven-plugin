@@ -9,7 +9,9 @@ package org.sourcepit.mavenizor.maven.converter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.maven.artifact.ArtifactUtils;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -47,6 +49,7 @@ public interface GAVStrategyFactory
       private boolean useDefaultSnapshotRules = true;
       private boolean trimQualifiers = false;
       private Collection<String> group3Prefixes = new HashSet<String>();
+      private Map<String, String> groupIdMappings = new LinkedHashMap<String, String>();
 
       private final List<SnapshotRule> additionalSnapshotRules = new ArrayList<SnapshotRule>();
 
@@ -84,10 +87,15 @@ public interface GAVStrategyFactory
       {
          this.trimQualifiers = trimQualifiers;
       }
-      
+
       public Collection<String> getGroup3Prefixes()
       {
          return group3Prefixes;
+      }
+
+      public Map<String, String> getGroupIdMappings()
+      {
+         return groupIdMappings;
       }
    }
 

@@ -87,9 +87,12 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
 
    /** @parameter */
    private String groupIdPrefix;
-   
+
    /** @parameter */
    private Set<String> group3Prefixes;
+
+   /** @parameter */
+   private List<String> groupIdMappings;
 
    /** @parameter expression="${dryRun}" default-value=false */
    private boolean dryRun;
@@ -331,6 +334,20 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
       final GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.setGroupIdPrefix(groupIdPrefix);
       request.setTrimQualifiers(trimQualifiers);
+      
+      if (groupIdMappings != null)
+      {
+         for (String groupIdMapping : groupIdMappings)
+         {
+            final String[] split = groupIdMapping.split("=");
+            if (split.length != 2)
+            {
+               throw Exceptions.pipe(new MojoExecutionException("Invalid groupId mapping " + groupIdMapping));
+            }
+            request.getGroupIdMappings().put(split[0], split[1]);
+         }
+      }
+      
       if (group3Prefixes != null)
       {
          request.getGroup3Prefixes().addAll(group3Prefixes);

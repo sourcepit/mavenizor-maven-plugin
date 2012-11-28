@@ -10,17 +10,25 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import org.codehaus.plexus.interpolation.AbstractValueSource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.utils.path.Path;
+import org.sourcepit.common.utils.path.PathMatcher;
+import org.sourcepit.common.utils.props.LinkedPropertiesMap;
+import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.common.utils.props.PropertiesSource;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
+import org.sourcepit.tools.shared.resources.harness.StringInterpolator;
 
 public class DefaultGAVStrategy implements GAVStrategy
 {
@@ -32,14 +40,16 @@ public class DefaultGAVStrategy implements GAVStrategy
    private final String groupIdPrefix;
    private final boolean trimQualifiers;
    private final Collection<String> group3Prefixes;
+   private final Map<String, String> groupIdMappings;
 
    public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules, String groupIdPrefix, boolean trimQualifiers,
-      Collection<String> group3Prefixes)
+      Collection<String> group3Prefixes, Map<String, String> groupIdMappings)
    {
       this.snapshotRules = snapshotRules;
       this.groupIdPrefix = groupIdPrefix == null ? null : groupIdPrefix.endsWith(".") ? groupIdPrefix : groupIdPrefix
          + ".";
       this.trimQualifiers = trimQualifiers;
+      this.groupIdMappings = groupIdMappings;
 
       this.group3Prefixes = new HashSet<String>();
       Collections.addAll(this.group3Prefixes, GROUP_3);
@@ -51,12 +61,42 @@ public class DefaultGAVStrategy implements GAVStrategy
 
    public String deriveGroupId(@NotNull BundleDescription bundle)
    {
-      final String groupId = deriveGroupId(bundle.getSymbolicName());
+      final String groupId = applyGroupIdMapping(deriveGroupId(bundle.getSymbolicName()));
       if (groupIdPrefix == null)
       {
          return groupId;
       }
       return groupIdPrefix + groupId;
+   }
+
+   private String applyGroupIdMapping(final String groupId)
+   {
+      for (Entry<String, String> entry : groupIdMappings.entrySet())
+      {
+         final PathMatcher matcher = PathMatcher.parsePackagePatterns(entry.getKey());
+         if (matcher.isMatch(groupId))
+         {
+            PropertiesMap props = new LinkedPropertiesMap(1);
+            props.put("bundle.groupId", groupId);
+            
+            return interpolate(props, entry.getValue());
+         }
+      }
+      return groupId;
+   }
+
+   private static String interpolate(final PropertiesSource moduleProperties, String value)
+   {
+      StringInterpolator s = new StringInterpolator();
+      s.setEscapeString("\\");
+      s.getValueSources().add(new AbstractValueSource(false)
+      {
+         public Object getValue(String expression)
+         {
+            return moduleProperties.get(expression);
+         }
+      });
+      return s.interpolate(value);
    }
 
    private String deriveGroupId(@NotNull @Size(min = 1) String symbolicName)
