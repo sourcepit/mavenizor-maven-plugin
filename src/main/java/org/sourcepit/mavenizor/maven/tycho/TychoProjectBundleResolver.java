@@ -52,7 +52,7 @@ public class TychoProjectBundleResolver implements BundleResolver
 
       // TODO 364134 re-use target platform from dependency resolution
       List<ReactorProject> reactorProjects = DefaultReactorProject.adapt(session);
-      TargetPlatform targetPlatform = platformResolver.computeTargetPlatform(session, project, reactorProjects);
+      TargetPlatform targetPlatform = platformResolver.computeTargetPlatform(session, project, reactorProjects, false);
 
       final DependencyResolverConfiguration resolverConfiguration = new DependencyResolverConfiguration()
       {
