@@ -6,6 +6,7 @@
 
 package org.sourcepit.mavenizor.maven;
 
+import java.util.Collections;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -83,8 +84,11 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
                + ". Expected format: id::layout::url");
          }
          final ArtifactRepositoryLayout repositoryLayout = repositoryLayouts.get(segments[1]);
-         return repositorySystem.createArtifactRepository(segments[0], segments[2], repositoryLayout,
-            new ArtifactRepositoryPolicy(), new ArtifactRepositoryPolicy());
+         final ArtifactRepository artifactRepository = repositorySystem.createArtifactRepository(segments[0],
+            segments[2], repositoryLayout, new ArtifactRepositoryPolicy(), new ArtifactRepositoryPolicy());
+         repositorySystem.injectAuthentication(session.getRepositorySession(),
+            Collections.singletonList(artifactRepository));
+         return artifactRepository;
       }
    }
 }
