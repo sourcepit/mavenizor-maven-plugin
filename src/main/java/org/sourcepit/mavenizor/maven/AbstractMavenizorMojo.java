@@ -427,7 +427,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
          {
             for (Artifact artifact : project.getAttachedArtifacts())
             {
-               if ("jar".equals(artifact.getType()) && "sources".equals(artifact.getClassifier()))
+               if ("java-source".equals(artifact.getType()) && "sources".equals(artifact.getClassifier()))
                {
                   return artifact.getFile();
                }

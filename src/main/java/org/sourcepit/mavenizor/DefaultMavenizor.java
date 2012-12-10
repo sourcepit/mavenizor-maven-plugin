@@ -401,13 +401,14 @@ public class DefaultMavenizor implements Mavenizor
                if (hasMavenizedArtifact(artifactBundle))
                {
                   final Model pom = artifactBundle.getPom();
-                  log.info("Attaching source " + sourceBundle + " to " + pom);
+                  log.info("Attaching source " + sourceJar + " to " + pom);
 
                   final MavenArtifact sourceArtifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
                   sourceArtifact.setGroupId(pom.getGroupId());
                   sourceArtifact.setArtifactId(pom.getArtifactId());
                   sourceArtifact.setVersion(pom.getVersion());
                   sourceArtifact.setClassifier("sources");
+                  sourceArtifact.setType("java-source");
                   sourceArtifact.setFile(sourceJar);
 
                   artifactBundle.getArtifacts().add(
