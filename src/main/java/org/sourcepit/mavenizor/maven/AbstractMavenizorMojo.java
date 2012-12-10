@@ -16,6 +16,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -44,6 +45,7 @@ import org.sourcepit.mavenizor.BundleFilter;
 import org.sourcepit.mavenizor.Mavenizor;
 import org.sourcepit.mavenizor.Mavenizor.Result;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
+import org.sourcepit.mavenizor.SourceJarResolver;
 import org.sourcepit.mavenizor.maven.BundleResolver.Handler;
 import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.ConvertionDirective;
@@ -334,7 +336,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
       final GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.setGroupIdPrefix(groupIdPrefix);
       request.setTrimQualifiers(trimQualifiers);
-      
+
       if (groupIdMappings != null)
       {
          for (String groupIdMapping : groupIdMappings)
@@ -347,7 +349,7 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
             request.getGroupIdMappings().put(split[0], split[1]);
          }
       }
-      
+
       if (group3Prefixes != null)
       {
          request.getGroup3Prefixes().addAll(group3Prefixes);
@@ -398,6 +400,43 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
       request.setTargetType(determineTargetType());
       request.setGAVStrategy(newGAVStrategy());
       request.setInputFilter(newInputFilter());
+      request.setSourceJarResolver(new SourceJarResolver()
+      {
+         public File resolveSource(BundleDescription bundle)
+         {
+            final File bundleJar = BundleAdapterFactory.DEFAULT.adapt(bundle, File.class);
+            final MavenProject project = getMavenProject(bundleJar);
+            if (project != null)
+            {
+               return getSourceJar(project);
+            }
+            return null;
+         }
+
+         private File getSourceJar(MavenProject project)
+         {
+            for (Artifact artifact : project.getAttachedArtifacts())
+            {
+               if ("jar".equals(artifact.getType()) && "sources".equals(artifact.getClassifier()))
+               {
+                  return artifact.getFile();
+               }
+            }
+            return null;
+         }
+
+         private MavenProject getMavenProject(final File bundleJar)
+         {
+            for (MavenProject project : session.getProjects())
+            {
+               if (bundleJar.equals(project.getArtifact().getFile()))
+               {
+                  return project;
+               }
+            }
+            return null;
+         }
+      });
    }
 
    protected abstract void processResult(Result result);

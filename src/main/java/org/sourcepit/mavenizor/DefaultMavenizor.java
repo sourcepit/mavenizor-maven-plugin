@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -76,7 +78,7 @@ public class DefaultMavenizor implements Mavenizor
          }
       }
 
-      processSourceBundles(state, result);
+      processSourceBundles(state, result, request.getSourceJarResolver());
 
       return result;
    }
@@ -195,7 +197,8 @@ public class DefaultMavenizor implements Mavenizor
       return mavenized.isEmpty() ? null : mavenized.get(0);
    }
 
-   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, ConvertedArtifact mainArtifact, PropertiesMap options, Result result)
+   private List<Dependency> determineEmbeddedDependencies(BundleDescription bundle, ConvertedArtifact mainArtifact,
+      PropertiesMap options, Result result)
    {
       final List<Dependency> embeddedDependencies = new ArrayList<Dependency>();
       for (ConvertedArtifact convertedArtifact : result.getConvertedArtifacts(bundle))
@@ -349,8 +352,9 @@ public class DefaultMavenizor implements Mavenizor
       return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
    }
 
-   private void processSourceBundles(final State state, final Result result)
+   private void processSourceBundles(final State state, final Result result, SourceJarResolver sourceJarResolver)
    {
+      final Map<BundleDescription, BundleDescription> hostToSourceBundleMap = new HashMap<BundleDescription, BundleDescription>();
       for (BundleDescription sourceBundle : result.getSourceBundles())
       {
          final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, BundleManifest.class);
@@ -364,14 +368,32 @@ public class DefaultMavenizor implements Mavenizor
          final String version = symbolicName.getParameterValue("version");
 
          final BundleDescription hostBundle = state.getBundle(hostBundleName, new org.osgi.framework.Version(version));
-         if (hostBundle == null)
+         if (hostBundle != null)
          {
-            log.warn("Skipping source bundle " + sourceBundle + ". Unable to find target " + hostBundleName + "_"
-               + version);
+            hostToSourceBundleMap.put(hostBundle, sourceBundle);
+         }
+      }
+
+      for (BundleDescription hostBundle : result.getInputBundles())
+      {
+         final File sourceJar;
+
+         final BundleDescription sourceBundle = hostToSourceBundleMap.get(hostBundle);
+         if (sourceBundle != null)
+         {
+            sourceJar = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, File.class);
+         }
+         else if (sourceJarResolver != null)
+         {
+            sourceJar = sourceJarResolver.resolveSource(hostBundle);
          }
          else
          {
-            final File sourceJar = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, File.class);
+            sourceJar = null;
+         }
+         
+         if (sourceJar != null)
+         {
             final List<ArtifactBundle> artifactBundles = result.getArtifactBundles(hostBundle);
 
             for (ArtifactBundle artifactBundle : artifactBundles)

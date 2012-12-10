@@ -64,6 +64,7 @@ public interface Mavenizor
       private BundleFilter inputFilter;
       private GAVStrategy gavStrategy;
       private PropertiesMap options = new LinkedPropertiesMap();
+      private SourceJarResolver sourceJarResolver;
 
       public File getWorkingDirectory()
       {
@@ -118,6 +119,16 @@ public interface Mavenizor
       public PropertiesMap getOptions()
       {
          return options;
+      }
+      
+      public void setSourceJarResolver(SourceJarResolver sourceJarResolver)
+      {
+         this.sourceJarResolver = sourceJarResolver;
+      }
+      
+      public SourceJarResolver getSourceJarResolver()
+      {
+         return sourceJarResolver;
       }
    }
 
