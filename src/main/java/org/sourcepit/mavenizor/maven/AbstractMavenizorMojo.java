@@ -108,6 +108,9 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    /** @parameter */
    private TargetType targetType;
 
+   /** @parameter expression="${projectFilter}" default-value="**" */
+   private String projectFilter;
+
    private Set<File> bundleLocationsInBuildScope;
 
    @Inject
@@ -131,6 +134,13 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    @Override
    protected void doExecute() throws PipedException
    {
+      final PathMatcher projectMatcher = PathMatcher.parsePackagePatterns(projectFilter);
+      if (!projectMatcher.isMatch(project.getArtifactId()))
+      {
+         logger.info("Skipped by projectFilter: '" + projectFilter + "'");
+         return;
+      }
+
       Result result = (Result) project.getContextValue("mavenizor.result");
       if (result == null)
       {
