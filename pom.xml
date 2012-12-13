@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.sourcepit</groupId>
 		<artifactId>srcpit-parent</artifactId>
-		<version>6</version>
+		<version>8</version>
 	</parent>
 
 	<artifactId>mavenizor-maven-plugin</artifactId>
@@ -35,7 +35,7 @@
 		<dependency>
 			<groupId>org.sourcepit</groupId>
 			<artifactId>guice-plexus-bridge</artifactId>
-			<version>0.1.0-alpha-4</version>
+			<version>0.1.0-alpha-5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -67,17 +67,17 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-manifest</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
+			<version>0.1.0-alpha-8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-maven</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
+			<version>0.1.0-alpha-7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit.tools</groupId>
 			<artifactId>shared-resources-harness</artifactId>
-			<version>0.1.0-alpha-2</version>
+			<version>0.1.0-alpha-3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit</groupId>
@@ -104,7 +104,7 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-testing</artifactId>
-			<version>0.1.0-alpha-5</version>
+			<version>0.1.0-alpha-6</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
