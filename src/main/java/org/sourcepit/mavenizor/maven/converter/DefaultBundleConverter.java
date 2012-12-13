@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -151,7 +152,7 @@ public class DefaultBundleConverter implements BundleConverter
    private Result caseAutoDetect(Request request)
    {
       final BundleDescription bundle = request.getBundle();
-      final MavenArtifact artifact = detectMavenArtifact(bundle);
+      final MavenArtifact artifact = detectMavenArtifactFromBundle(bundle);
       if (artifact != null)
       {
          log.info(bundle + " -> " + toArtifactKey(artifact) + " (detected)");
@@ -245,7 +246,7 @@ public class DefaultBundleConverter implements BundleConverter
       {
          if (autoDetect)
          {
-            MavenArtifact artifact = detectMavenArtifact(libFile);
+            MavenArtifact artifact = detectMavenArtifactFromLib(libFile);
             if (artifact == null)
             {
                result.getUnhandledEmbeddedLibraries().add(libEntry);
@@ -276,15 +277,15 @@ public class DefaultBundleConverter implements BundleConverter
       }
    }
 
-   private static MavenArtifact detectMavenArtifact(BundleDescription bundle)
+   private static MavenArtifact detectMavenArtifactFromBundle(BundleDescription bundle)
    {
-      final PropertiesMap pomProperties = loadPomProperties(bundle);
+      final PropertiesMap pomProperties = loadPomPropertiesFromBundle(bundle);
       return toMavenArtifact(pomProperties, getBundleLocation(bundle));
    }
 
-   private static MavenArtifact detectMavenArtifact(final File libFile)
+   private static MavenArtifact detectMavenArtifactFromLib(final File libFile)
    {
-      final PropertiesMap pomProperties = loadPomProperties(libFile);
+      final PropertiesMap pomProperties = loadPomPropertiesFromLib(libFile);
       return toMavenArtifact(pomProperties, libFile);
    }
 
@@ -338,35 +339,62 @@ public class DefaultBundleConverter implements BundleConverter
       return packaging[0] == null ? "jar" : packaging[0];
    }
 
-   private static PropertiesMap loadPomProperties(BundleDescription bundle)
+   private static PropertiesMap loadPomPropertiesFromBundle(BundleDescription bundle)
    {
+      final List<String> paths = new ArrayList<String>();
+      final PropertiesMap pomProperties = new LinkedPropertiesMap();
+
       final File bundleLocation = getBundleLocation(bundle);
       if (bundleLocation.isDirectory())
       {
-         final PropertiesMap pomProperties = new LinkedPropertiesMap();
-         FileUtils.accept(new File(bundleLocation, "META-INF/maven"), new FileVisitor()
-         {
-            public boolean visit(File file)
-            {
-               final Path path = new Path(PathUtils.getRelativePath(file, bundleLocation, "/"));
-               if (isPomPropertiesPath(path))
-               {
-                  pomProperties.load(file);
-               }
-               return true;
-            }
-         });
-         return pomProperties;
+         loadPomPropertiesFromDir(paths, pomProperties, bundleLocation);
       }
       else
       {
-         return loadPomProperties(bundleLocation);
+         loadPomPropertiesFromLib(paths, pomProperties, bundleLocation);
       }
+
+      if (paths.size() != 1)
+      {
+         pomProperties.clear();
+      }
+
+      return pomProperties;
    }
 
-   private static PropertiesMap loadPomProperties(final File libFile)
+   private static void loadPomPropertiesFromDir(final Collection<String> paths, final PropertiesMap pomProperties,
+      final File dir)
    {
+      FileUtils.accept(new File(dir, "META-INF/maven"), new FileVisitor()
+      {
+         public boolean visit(File file)
+         {
+            final Path path = new Path(PathUtils.getRelativePath(file, dir, "/"));
+            if (isPomPropertiesPath(path))
+            {
+               paths.add(path.toString());
+               pomProperties.load(file);
+            }
+            return true;
+         }
+      });
+   }
+
+   private static PropertiesMap loadPomPropertiesFromLib(final File libFile)
+   {
+      final List<String> paths = new ArrayList<String>();
       final PropertiesMap pomProperties = new LinkedPropertiesMap();
+      loadPomPropertiesFromLib(paths, pomProperties, libFile);
+      if (paths.size() != 1)
+      {
+         pomProperties.clear();
+      }
+      return pomProperties;
+   }
+
+   private static void loadPomPropertiesFromLib(final Collection<String> paths, final PropertiesMap pomProperties,
+      final File libFile)
+   {
       new IOOperation<ZipInputStream>(zipIn(buffIn(fileIn(libFile))))
       {
          @Override
@@ -377,6 +405,7 @@ public class DefaultBundleConverter implements BundleConverter
             {
                if (isPomPropertiesEntry(zipEntry))
                {
+                  paths.add(zipEntry.getName());
                   pomProperties.load(zipIn);
                }
                zipEntry = zipIn.getNextEntry();
@@ -392,7 +421,6 @@ public class DefaultBundleConverter implements BundleConverter
             return false;
          }
       }.run();
-      return pomProperties;
    }
 
    private static File getBundleLocation(BundleDescription bundle)

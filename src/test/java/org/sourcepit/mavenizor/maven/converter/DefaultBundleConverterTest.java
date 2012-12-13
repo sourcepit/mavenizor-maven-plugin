@@ -296,7 +296,39 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
       assertThat(mavenArtifact.getArtifactId(), IsEqual.equalTo(expectedLib.getArtifactId()));
       assertThat(mavenArtifact.getVersion(), IsEqual.equalTo(expectedLib.getVersion()));
    }
+   
+   @Test
+   public void testAutoDetectLibraryAmbiguous()
+   {
+      VersionedIdentifiable expectedLib = MavenModelFactory.eINSTANCE.createMavenArtifact();
+      expectedLib.setGroupId("hans");
+      expectedLib.setArtifactId("wurst");
+      expectedLib.setVersion("3");
+      
+      VersionedIdentifiable expectedLib2 = MavenModelFactory.eINSTANCE.createMavenArtifact();
+      expectedLib2.setGroupId("foo");
+      expectedLib2.setArtifactId("bar");
+      expectedLib2.setVersion("3");
 
+      BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
+      File bundleDir = newBundle(bundlesDir, mf);
+      addEmbeddedLibrary(bundleDir, mf, ".");
+      addEmbeddedLibrary(bundleDir, mf, "embedded.jar", expectedLib, expectedLib2);
+
+      State state = newState(bundlesDir, mf);
+
+      BundleDescription bundle = getBundle(state, "foo");
+
+      PropertiesMap options = new LinkedPropertiesMap();
+
+      Request request = newRequest(bundle, options);
+
+      Result result = converter.toMavenArtifacts(request);
+      assertFalse(result.getConvertedArtifacts().get(0).isEmbeddedLibrary());
+      assertThat(result.getConvertedArtifacts().size(), Is.is(1));
+      assertThat(result.getUnhandledEmbeddedLibraries().size(), Is.is(1));
+   }
+   
    @Test
    public void testAutoDetectBundle() throws IOException
    {

@@ -238,11 +238,11 @@ public final class MavenizorTestHarness
 
    public static void addEmbeddedLibrary(File bundlesDir, BundleManifest manifest, String libEntry)
    {
-      addEmbeddedLibrary(bundlesDir, manifest, libEntry, null);
+      addEmbeddedLibrary(bundlesDir, manifest, libEntry, (VersionedIdentifiable[]) null);
    }
 
    public static void addEmbeddedLibrary(File bundlesDir, BundleManifest manifest, String libEntry,
-      final VersionedIdentifiable gav)
+      final VersionedIdentifiable... gavs)
    {
       if (!".".equals(libEntry))
       {
@@ -261,23 +261,26 @@ public final class MavenizorTestHarness
 
                jarOut.closeEntry();
 
-               if (gav != null)
+               if (gavs != null)
                {
-                  PropertiesMap pomProps = toPomProperties(gav);
+                  for (VersionedIdentifiable gav : gavs)
+                  {
+                     PropertiesMap pomProps = toPomProperties(gav);
 
-                  e = new JarEntry(toPomPropertiesPath(gav));
-                  jarOut.putNextEntry(e);
+                     e = new JarEntry(toPomPropertiesPath(gav));
+                     jarOut.putNextEntry(e);
 
-                  pomProps.store(jarOut);
+                     pomProps.store(jarOut);
 
-                  jarOut.closeEntry();
+                     jarOut.closeEntry();
 
-                  Document doc = toPomXml(gav);
+                     Document doc = toPomXml(gav);
 
-                  e = new JarEntry(toPomXmlPath(gav));
-                  jarOut.putNextEntry(e);
-                  XmlUtils.writeXml(doc, jarOut);
-                  jarOut.closeEntry();
+                     e = new JarEntry(toPomXmlPath(gav));
+                     jarOut.putNextEntry(e);
+                     XmlUtils.writeXml(doc, jarOut);
+                     jarOut.closeEntry();
+                  }
                }
             }
          }.run();
