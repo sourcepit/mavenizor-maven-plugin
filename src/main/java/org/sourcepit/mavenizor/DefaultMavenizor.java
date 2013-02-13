@@ -12,8 +12,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -28,10 +30,7 @@ import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
 import org.slf4j.Logger;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
-import org.sourcepit.common.manifest.osgi.BundleSymbolicName;
 import org.sourcepit.common.manifest.osgi.VersionRange;
-import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParser;
-import org.sourcepit.common.manifest.osgi.parser.BundleHeaderParserImpl;
 import org.sourcepit.common.maven.model.MavenArtifact;
 import org.sourcepit.common.maven.model.MavenModelFactory;
 import org.sourcepit.common.utils.lang.Exceptions;
@@ -41,6 +40,7 @@ import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 import org.sourcepit.mavenizor.maven.converter.ConvertionDirective;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
+import org.sourcepit.mavenizor.maven.tycho.TychoSourceIUResolver;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 import org.sourcepit.mavenizor.state.Requirement;
 import org.sourcepit.mavenizor.state.RequirementsCollector;
@@ -71,10 +71,17 @@ public class DefaultMavenizor implements Mavenizor
 
       for (BundleDescription bundle : state.getBundles())
       {
-         if (inputFilter.accept(bundle))
+         if (isEclipseSourceBundle(bundle))
          {
-            result.getInputBundles().add(bundle);
-            mavenize(request, bundle, result);
+            result.getSourceBundles().add(bundle);
+         }
+         else
+         {
+            if (inputFilter.accept(bundle))
+            {
+               result.getInputBundles().add(bundle);
+               mavenize(request, bundle, result);
+            }
          }
       }
 
@@ -92,7 +99,7 @@ public class DefaultMavenizor implements Mavenizor
 
       if (isEclipseSourceBundle(bundle))
       {
-         result.getSourceBundles().add(bundle);
+         throw new IllegalStateException();
       }
       else
       {
@@ -349,7 +356,7 @@ public class DefaultMavenizor implements Mavenizor
    private boolean isEclipseSourceBundle(BundleDescription bundle)
    {
       final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
-      return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
+      return manifest.getHeaderValue("Eclipse-SourceBundle") != null || bundle.getSymbolicName().endsWith(".source");
    }
 
    private void processSourceBundles(final State state, final Result result, SourceJarResolver sourceJarResolver)
@@ -359,13 +366,15 @@ public class DefaultMavenizor implements Mavenizor
       {
          final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(sourceBundle, BundleManifest.class);
 
-         final BundleHeaderParser parser = new BundleHeaderParserImpl();
+         String[] targetIdAndVersion = TychoSourceIUResolver.getTargetIdAndVersion(manifest);
+         if (targetIdAndVersion == null)
+         {
+            targetIdAndVersion = TychoSourceIUResolver.getTargetIdAndVersion(sourceBundle.getSymbolicName(),
+               sourceBundle.getVersion().toString());
+         }
 
-         final BundleSymbolicName symbolicName = parser.parseBundleSymbolicName(manifest
-            .getHeaderValue("Eclipse-SourceBundle"));
-
-         final String hostBundleName = symbolicName.getSymbolicName();
-         final String version = symbolicName.getParameterValue("version");
+         final String hostBundleName = targetIdAndVersion[0];
+         final String version = targetIdAndVersion[1];
 
          final BundleDescription hostBundle = state.getBundle(hostBundleName, new org.osgi.framework.Version(version));
          if (hostBundle != null)
@@ -374,7 +383,16 @@ public class DefaultMavenizor implements Mavenizor
          }
       }
 
-      for (BundleDescription hostBundle : result.getInputBundles())
+      final Set<BundleDescription> hostBundles = new LinkedHashSet<BundleDescription>();
+      for (ArtifactBundle artifactBundle : result.getArtifactBundles())
+      {
+         for (BundleDescription bundle : result.getBundles(artifactBundle))
+         {
+            hostBundles.add(bundle);
+         }
+      }
+
+      for (BundleDescription hostBundle : hostBundles)
       {
          final File sourceJar;
 
@@ -391,7 +409,7 @@ public class DefaultMavenizor implements Mavenizor
          {
             sourceJar = null;
          }
-         
+
          if (sourceJar != null)
          {
             final List<ArtifactBundle> artifactBundles = result.getArtifactBundles(hostBundle);

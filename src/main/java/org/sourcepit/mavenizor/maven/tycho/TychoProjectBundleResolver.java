@@ -8,7 +8,9 @@ package org.sourcepit.mavenizor.maven.tycho;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -37,6 +39,9 @@ public class TychoProjectBundleResolver implements BundleResolver
 {
    @Inject
    private DefaultTargetPlatformResolverFactory targetPlatformResolverLocator;
+
+   @Inject
+   private TychoSourceIUResolver sourceResolver;
 
    public void resolve(final MavenSession session, final Handler handler)
    {
@@ -75,12 +80,16 @@ public class TychoProjectBundleResolver implements BundleResolver
          throw Exceptions.pipe(new MojoExecutionException("Cannot determinate build target platform location"));
       }
 
+      final Set<String> sourceTargetBundles = new LinkedHashSet<String>();
+
       for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(ArtifactKey.TYPE_ECLIPSE_PLUGIN))
       {
          ReactorProject mavenProject = artifact.getMavenProject();
          if (mavenProject == null)
          {
             handler.resolved(artifact.getLocation());
+            final ArtifactKey key = artifact.getKey();
+            sourceTargetBundles.add(key.getId() + "_" + key.getVersion()); // try to resolve sources for non-project
          }
          else
          {
@@ -94,6 +103,11 @@ public class TychoProjectBundleResolver implements BundleResolver
                handler.resolved(projectArtifact);
             }
          }
+      }
+
+      if (!sourceTargetBundles.isEmpty())
+      {
+         sourceResolver.resolveSources(session, targetPlatform, sourceTargetBundles, handler);
       }
    }
 }
