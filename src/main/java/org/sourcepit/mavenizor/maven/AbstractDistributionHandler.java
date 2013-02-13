@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.ArtifactUtils;
 import org.slf4j.Logger;
 import org.sonatype.aether.util.ChecksumUtils;
 import org.sourcepit.common.utils.lang.Exceptions;
@@ -56,7 +57,15 @@ public abstract class AbstractDistributionHandler implements DistributionHandler
       final String localChecksum = getLocalChecksum(artifact);
       if (!localChecksum.equals(remoteChecksum))
       {
-         getLog().warn("Target artifact " + artifact + " exists, but with diffrent checksum.");
+         if (ArtifactUtils.isSnapshot(artifact.getVersion()))
+         {
+            getLog().info("Target SNAPSHOT artifact " + artifact + " differs from local artifact.");
+            return false;
+         }
+         else
+         {
+            getLog().warn("Target artifact " + artifact + " exists, but with diffrent checksum.");
+         }
       }
 
       return true;
