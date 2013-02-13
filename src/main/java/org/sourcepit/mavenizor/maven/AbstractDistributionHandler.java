@@ -6,8 +6,15 @@
 
 package org.sourcepit.mavenizor.maven;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.maven.artifact.Artifact;
 import org.slf4j.Logger;
+import org.sonatype.aether.util.ChecksumUtils;
+import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.mavenizor.maven.ArtifactBundleDistributor.DistributionHandler;
 
 public abstract class AbstractDistributionHandler implements DistributionHandler
@@ -31,7 +38,51 @@ public abstract class AbstractDistributionHandler implements DistributionHandler
       }
    }
 
+   protected Logger getLog()
+   {
+      return log;
+   }
+
    protected abstract void doDistribute(Artifact artifact);
 
-   protected abstract boolean existsInTarget(Artifact artifact);
+   protected final boolean existsInTarget(Artifact artifact)
+   {
+      final String remoteChecksum = getTargetChecksum(artifact);
+      if (remoteChecksum == null)
+      {
+         return false;
+      }
+
+      final String localChecksum = getLocalChecksum(artifact);
+      if (!localChecksum.equals(remoteChecksum))
+      {
+         getLog().warn("Target artifact " + artifact + " exists, but with diffrent checksum.");
+      }
+
+      return true;
+   }
+
+   protected abstract String getLocalChecksum(Artifact artifact);
+
+   protected abstract String getTargetChecksum(Artifact artifact);
+
+   protected static String calc(final File targetFile, String algo)
+   {
+      try
+      {
+         final Map<String, Object> checksums = ChecksumUtils.calc(targetFile, Collections.singleton(algo));
+
+         final Object checksum = checksums.values().iterator().next();
+         if (checksum instanceof Throwable)
+         {
+            throw new IllegalStateException((Throwable) checksum);
+         }
+
+         return (String) checksum;
+      }
+      catch (IOException e)
+      {
+         throw Exceptions.pipe(e);
+      }
+   }
 }

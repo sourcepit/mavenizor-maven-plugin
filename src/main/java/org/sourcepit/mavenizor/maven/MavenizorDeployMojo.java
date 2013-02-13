@@ -15,6 +15,7 @@ import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.sonatype.aether.impl.MetadataResolver;
 import org.sonatype.aether.impl.RemoteRepositoryManager;
 import org.sourcepit.common.maven.util.MavenProjectUtils;
 
@@ -38,6 +39,9 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
    /** @parameter expression="${altDeploymentRepository}" */
    private String altDeploymentRepository;
 
+   @Inject
+   private MetadataResolver metadataResolver;
+
    @Override
    protected AbstractDistributionHandler getDistributionHandler()
    {
@@ -56,7 +60,7 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
          releaseRepository = deploymentRepository;
       }
       return new DeploymentHandler(logger, remoteRepositoryManager, session.getRepositorySession(), deployer,
-         localRepository, snapshotRepository, releaseRepository);
+         localRepository, snapshotRepository, releaseRepository, metadataResolver);
    }
 
    protected ArtifactRepository getSnapshotRepository()

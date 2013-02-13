@@ -6,15 +6,11 @@
 
 package org.sourcepit.mavenizor.maven;
 
-import java.io.File;
 
 import javax.inject.Inject;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.installer.ArtifactInstallationException;
 import org.apache.maven.artifact.installer.ArtifactInstaller;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.sourcepit.common.utils.lang.Exceptions;
 
 /**
  * @requiresDependencyResolution test
@@ -31,26 +27,6 @@ public class MavenizorInstallMojo extends AbstractDistributingMavenizorMojo
    protected AbstractDistributionHandler getDistributionHandler()
    {
       final ArtifactRepository localRepository = getLocalRepository();
-      return new AbstractDistributionHandler(logger)
-      {
-         @Override
-         protected void doDistribute(Artifact artifact)
-         {
-            try
-            {
-               installer.install(artifact.getFile(), artifact, localRepository);
-            }
-            catch (ArtifactInstallationException e)
-            {
-               throw Exceptions.pipe(e);
-            }
-         }
-
-         @Override
-         protected boolean existsInTarget(Artifact artifact)
-         {
-            return new File(localRepository.getBasedir(), localRepository.pathOf(artifact)).exists();
-         }
-      };
+      return new InstallationHandler(logger, installer, localRepository);
    }
 }
