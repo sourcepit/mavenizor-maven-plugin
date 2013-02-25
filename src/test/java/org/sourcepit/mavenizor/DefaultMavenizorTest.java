@@ -191,14 +191,14 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
 
-      addEmbeddedLibrary(bundleDir, manifest, "z.jar", null);
-      addEmbeddedLibrary(bundleDir, manifest, "a.jar", null);
+      addEmbeddedLibrary(bundleDir, manifest, "z.jar", (VersionedIdentifiable[]) null);
+      addEmbeddedLibrary(bundleDir, manifest, "a.jar", (VersionedIdentifiable[]) null);
 
       VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
       libGav.setGroupId("hans");
       libGav.setArtifactId("foo");
       libGav.setVersion("3");
-      addEmbeddedLibrary(bundleDir, manifest, "lib/foo.jar", null);
+      addEmbeddedLibrary(bundleDir, manifest, "lib/foo.jar", (VersionedIdentifiable[]) null);
 
       State osgiState = newState(bundlesDir, manifest);
 
@@ -238,7 +238,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       assertThat(pom.getArtifactId(), IsEqual.equalTo("a"));
       assertNotNull(pom.getVersion());
       assertThat(pom.getDependencies().size(), Is.is(0));
-      
+
       artifactBundle = result.getArtifactBundles().get(2);
       assertThat(artifactBundle.getArtifacts().size(), Is.is(1));
       assertTrue(artifactBundle.getArtifacts().get(0).isEmbeddedLibrary());
