@@ -6,6 +6,7 @@
 
 package org.sourcepit.mavenizor.maven.converter;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.sourcepit.common.maven.model.util.MavenModelUtils.parseArtifactKey;
 import static org.sourcepit.common.maven.model.util.MavenModelUtils.toArtifactKey;
 import static org.sourcepit.common.utils.io.IO.buffIn;
@@ -279,8 +280,45 @@ public class DefaultBundleConverter implements BundleConverter
 
    private static MavenArtifact detectMavenArtifactFromBundle(BundleDescription bundle)
    {
-      final PropertiesMap pomProperties = loadPomPropertiesFromBundle(bundle);
-      return toMavenArtifact(pomProperties, getBundleLocation(bundle));
+      MavenArtifact artifact = detectMavenArtifactFromManifest(bundle);
+      if (artifact == null)
+      {
+         final PropertiesMap pomProperties = loadPomPropertiesFromBundle(bundle);
+         artifact = toMavenArtifact(pomProperties, getBundleLocation(bundle));
+      }
+      return artifact;
+   }
+
+   private static MavenArtifact detectMavenArtifactFromManifest(BundleDescription bundle)
+   {
+      final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
+
+      final String groupId = manifest.getHeaderValue("Maven-GroupId");
+      final String artifactId = manifest.getHeaderValue("Maven-ArtifactId");
+      final String version = manifest.getHeaderValue("Maven-Version");
+
+      if (groupId != null && artifactId != null && version != null)
+      {
+         final String type = manifest.getHeaderValue("Maven-Type");
+         final String classifier = manifest.getHeaderValue("Maven-Classifier");
+
+         final MavenArtifact artifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
+         artifact.setGroupId(groupId);
+         artifact.setArtifactId(artifactId);
+         if (isNullOrEmpty(type))
+         {
+            artifact.setType(type);
+         }
+         if (isNullOrEmpty(classifier))
+         {
+            artifact.setClassifier(classifier);
+         }
+         artifact.setVersion(version);
+         artifact.setFile(getBundleLocation(bundle));
+
+         return artifact;
+      }
+      return null;
    }
 
    private static MavenArtifact detectMavenArtifactFromLib(final File libFile)
