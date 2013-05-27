@@ -29,9 +29,9 @@ import org.hamcrest.core.IsEqual;
 import org.junit.Before;
 import org.junit.Test;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
+import org.sourcepit.common.maven.model.ArtifactKeyBuilder;
 import org.sourcepit.common.maven.model.MavenArtifact;
-import org.sourcepit.common.maven.model.MavenModelFactory;
-import org.sourcepit.common.maven.model.VersionedIdentifiable;
+import org.sourcepit.common.maven.model.ProjectKey;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
 import org.sourcepit.mavenizor.AbstractMavenizorTest;
@@ -266,10 +266,13 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    @Test
    public void testAutoDetectLibrary()
    {
-      VersionedIdentifiable expectedLib = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      expectedLib.setGroupId("hans");
-      expectedLib.setArtifactId("wurst");
-      expectedLib.setVersion("3");
+      final ProjectKey expectedLib = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -296,19 +299,25 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
       assertThat(mavenArtifact.getArtifactId(), IsEqual.equalTo(expectedLib.getArtifactId()));
       assertThat(mavenArtifact.getVersion(), IsEqual.equalTo(expectedLib.getVersion()));
    }
-   
+
    @Test
    public void testAutoDetectLibraryAmbiguous()
    {
-      VersionedIdentifiable expectedLib = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      expectedLib.setGroupId("hans");
-      expectedLib.setArtifactId("wurst");
-      expectedLib.setVersion("3");
-      
-      VersionedIdentifiable expectedLib2 = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      expectedLib2.setGroupId("foo");
-      expectedLib2.setArtifactId("bar");
-      expectedLib2.setVersion("3");
+      final ProjectKey expectedLib = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
+
+      final ProjectKey expectedLib2 = new ArtifactKeyBuilder()
+         .setGroupId("foo")
+         .setArtifactId("bar")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -328,7 +337,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
       assertThat(result.getConvertedArtifacts().size(), Is.is(1));
       assertThat(result.getUnhandledEmbeddedLibraries().size(), Is.is(1));
    }
-   
+
    @Test
    public void testAutoDetectBundle() throws IOException
    {
@@ -340,10 +349,13 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
          File bundleDir = newBundle(bundlesDir, mf);
          addEmbeddedLibrary(bundleDir, mf, "embedded.jar");
 
-         VersionedIdentifiable expectedGAV = MavenModelFactory.eINSTANCE.createMavenArtifact();
-         expectedGAV.setGroupId("hans");
-         expectedGAV.setArtifactId("wurst");
-         expectedGAV.setVersion("3");
+         final ProjectKey expectedGAV = new ArtifactKeyBuilder()
+            .setGroupId("hans")
+            .setArtifactId("wurst").setType("jar")
+            .setType("jar")
+            .setVersion("3")
+            .toArtifactKey()
+            .getProjectKey();
 
          addMavenMetaData(bundleDir, expectedGAV);
 
@@ -367,7 +379,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
          }
 
          PropertiesMap options = new LinkedPropertiesMap();
-         
+
          Request request = newRequest(bundle, options);
 
          Result result = converter.toMavenArtifacts(request);

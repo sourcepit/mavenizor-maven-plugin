@@ -32,8 +32,8 @@ import org.hamcrest.core.IsEqual;
 import org.junit.Before;
 import org.junit.Test;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
-import org.sourcepit.common.maven.model.MavenModelFactory;
-import org.sourcepit.common.maven.model.VersionedIdentifiable;
+import org.sourcepit.common.maven.model.ArtifactKeyBuilder;
+import org.sourcepit.common.maven.model.ProjectKey;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
@@ -103,10 +103,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    @Test
    public void testBundleWithEmbeddedArtifact()
    {
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -152,10 +155,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    @Test
    public void testBundleWithEmbeddedArtifact_OmitBundle()
    {
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -191,14 +197,9 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
 
-      addEmbeddedLibrary(bundleDir, manifest, "z.jar", (VersionedIdentifiable[]) null);
-      addEmbeddedLibrary(bundleDir, manifest, "a.jar", (VersionedIdentifiable[]) null);
-
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("foo");
-      libGav.setVersion("3");
-      addEmbeddedLibrary(bundleDir, manifest, "lib/foo.jar", (VersionedIdentifiable[]) null);
+      addEmbeddedLibrary(bundleDir, manifest, "z.jar", (ProjectKey[]) null);
+      addEmbeddedLibrary(bundleDir, manifest, "a.jar", (ProjectKey[]) null);
+      addEmbeddedLibrary(bundleDir, manifest, "lib/foo.jar", (ProjectKey[]) null);
 
       State osgiState = newState(bundlesDir, manifest);
 
@@ -254,10 +255,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    @Test
    public void testBundleWithEmbeddedArtifact_IgnoreBundle()
    {
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -279,10 +283,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    @Test
    public void testBundleWithDependencyToBundleWithEmbeddedArtifact() throws IOException
    {
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest1);
@@ -322,10 +329,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    @Test
    public void testBundleWithDependencyToBundleWithEmbeddedArtifact_OmitBundle() throws IOException
    {
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest1);
@@ -379,10 +389,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       BundleManifest manifest2 = newManifest("org.sourcepit.testbundle2", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest2);
       addBundleRequirement(manifest2, manifest1.getBundleSymbolicName().getSymbolicName(), "[1,2)");
-      VersionedIdentifiable libGav = MavenModelFactory.eINSTANCE.createMavenArtifact();
-      libGav.setGroupId("hans");
-      libGav.setArtifactId("wurst");
-      libGav.setVersion("3");
+      final ProjectKey libGav = new ArtifactKeyBuilder()
+         .setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
       addEmbeddedLibrary(bundleDir, manifest2, ".");
       addEmbeddedLibrary(bundleDir, manifest2, "embedded.jar", libGav);
       addEmbeddedLibrary(bundleDir, manifest2, "embedded2.jar");

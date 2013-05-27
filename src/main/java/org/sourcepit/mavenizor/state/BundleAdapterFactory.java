@@ -6,7 +6,7 @@
 
 package org.sourcepit.mavenizor.state;
 
-import static org.sourcepit.common.utils.io.IOResources.osgiIn;
+import static org.sourcepit.common.utils.io.IO.osgiIn;
 
 import java.io.File;
 import java.io.IOException;

@@ -8,12 +8,12 @@ package org.sourcepit.mavenizor.maven.converter;
 
 import static org.sourcepit.common.maven.model.util.MavenModelUtils.parseArtifactKey;
 import static org.sourcepit.common.maven.model.util.MavenModelUtils.toArtifactKey;
-import static org.sourcepit.common.utils.io.IOResources.buffIn;
-import static org.sourcepit.common.utils.io.IOResources.buffOut;
-import static org.sourcepit.common.utils.io.IOResources.fileIn;
-import static org.sourcepit.common.utils.io.IOResources.fileOut;
-import static org.sourcepit.common.utils.io.IOResources.osgiIn;
-import static org.sourcepit.common.utils.io.IOResources.zipIn;
+import static org.sourcepit.common.utils.io.IO.buffIn;
+import static org.sourcepit.common.utils.io.IO.buffOut;
+import static org.sourcepit.common.utils.io.IO.fileIn;
+import static org.sourcepit.common.utils.io.IO.fileOut;
+import static org.sourcepit.common.utils.io.IO.osgiIn;
+import static org.sourcepit.common.utils.io.IO.zipIn;
 import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.AUTO_DETECT;
 import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.IGNORE;
 import static org.sourcepit.mavenizor.maven.converter.ConvertionDirective.MAVENIZE;
@@ -47,8 +47,8 @@ import org.sourcepit.common.maven.model.MavenModelFactory;
 import org.sourcepit.common.utils.file.FileUtils;
 import org.sourcepit.common.utils.file.FileVisitor;
 import org.sourcepit.common.utils.io.DualIOOperation;
+import org.sourcepit.common.utils.io.IOHandle;
 import org.sourcepit.common.utils.io.IOOperation;
-import org.sourcepit.common.utils.io.IOResource;
 import org.sourcepit.common.utils.lang.PipedIOException;
 import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.path.PathUtils;
@@ -435,8 +435,8 @@ public class DefaultBundleConverter implements BundleConverter
 
    private boolean copyEmbeddedLib(final File bundleLocation, Path libEntry, final File libCopyFile)
    {
-      final IOResource<? extends InputStream> lib = osgiIn(bundleLocation, libEntry.toString());
-      final IOResource<? extends OutputStream> copy = buffOut(fileOut(libCopyFile, true));
+      final IOHandle<? extends InputStream> lib = osgiIn(bundleLocation, libEntry.toString());
+      final IOHandle<? extends OutputStream> copy = buffOut(fileOut(libCopyFile, true));
       try
       {
          new DualIOOperation<InputStream, OutputStream>(lib, copy)

@@ -9,11 +9,11 @@ package org.sourcepit.mavenizor;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.sourcepit.common.utils.io.IOResources.buffIn;
-import static org.sourcepit.common.utils.io.IOResources.buffOut;
-import static org.sourcepit.common.utils.io.IOResources.fileIn;
-import static org.sourcepit.common.utils.io.IOResources.fileOut;
-import static org.sourcepit.common.utils.io.IOResources.jarOut;
+import static org.sourcepit.common.utils.io.IO.buffIn;
+import static org.sourcepit.common.utils.io.IO.buffOut;
+import static org.sourcepit.common.utils.io.IO.fileIn;
+import static org.sourcepit.common.utils.io.IO.fileOut;
+import static org.sourcepit.common.utils.io.IO.jarOut;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,12 +50,12 @@ import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.manifest.osgi.resource.BundleManifestResourceImpl;
 import org.sourcepit.common.manifest.resource.ManifestResource;
 import org.sourcepit.common.manifest.resource.ManifestResourceImpl;
-import org.sourcepit.common.maven.model.Identifiable;
-import org.sourcepit.common.maven.model.VersionedIdentifiable;
+import org.sourcepit.common.maven.model.ArtifactConflictKey;
+import org.sourcepit.common.maven.model.ProjectKey;
 import org.sourcepit.common.utils.file.FileUtils;
 import org.sourcepit.common.utils.file.FileVisitor;
 import org.sourcepit.common.utils.io.IOOperation;
-import org.sourcepit.common.utils.io.JarOutputStreamResource;
+import org.sourcepit.common.utils.io.factories.JarOutputStreamHandle;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.path.PathUtils;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
@@ -238,11 +238,11 @@ public final class MavenizorTestHarness
 
    public static void addEmbeddedLibrary(File bundlesDir, BundleManifest manifest, String libEntry)
    {
-      addEmbeddedLibrary(bundlesDir, manifest, libEntry, (VersionedIdentifiable[]) null);
+      addEmbeddedLibrary(bundlesDir, manifest, libEntry, (ProjectKey[]) null);
    }
 
    public static void addEmbeddedLibrary(File bundlesDir, BundleManifest manifest, String libEntry,
-      final VersionedIdentifiable... gavs)
+      final ProjectKey... gavs)
    {
       if (!".".equals(libEntry))
       {
@@ -263,11 +263,11 @@ public final class MavenizorTestHarness
 
                if (gavs != null)
                {
-                  for (VersionedIdentifiable gav : gavs)
+                  for (ProjectKey gav : gavs)
                   {
                      PropertiesMap pomProps = toPomProperties(gav);
 
-                     e = new JarEntry(toPomPropertiesPath(gav));
+                     e = new JarEntry(toPomPropertiesPath(gav.getArtifactConflictKey()));
                      jarOut.putNextEntry(e);
 
                      pomProps.store(jarOut);
@@ -276,7 +276,7 @@ public final class MavenizorTestHarness
 
                      Document doc = toPomXml(gav);
 
-                     e = new JarEntry(toPomXmlPath(gav));
+                     e = new JarEntry(toPomXmlPath(gav.getArtifactConflictKey()));
                      jarOut.putNextEntry(e);
                      XmlUtils.writeXml(doc, jarOut);
                      jarOut.closeEntry();
@@ -303,7 +303,7 @@ public final class MavenizorTestHarness
    {
       final File jarFile = new File(dir.getAbsolutePath() + ".jar");
 
-      final JarOutputStreamResource jarResource = jarOut(buffOut(fileOut(jarFile, true)));
+      final JarOutputStreamHandle jarResource = jarOut(buffOut(fileOut(jarFile, true)));
       new IOOperation<JarOutputStream>(jarResource)
       {
          @Override
@@ -366,9 +366,10 @@ public final class MavenizorTestHarness
       return jarFile;
    }
 
-   public static void addMavenMetaData(File bundleDir, final VersionedIdentifiable gav)
+   public static void addMavenMetaData(File bundleDir, final ProjectKey gav)
    {
-      new IOOperation<OutputStream>(buffOut(fileOut(bundleDir, toPomPropertiesPath(gav), true)))
+      new IOOperation<OutputStream>(
+         buffOut(fileOut(bundleDir, toPomPropertiesPath(gav.getArtifactConflictKey()), true)))
       {
          @Override
          protected void run(OutputStream outputStream) throws IOException
@@ -377,7 +378,7 @@ public final class MavenizorTestHarness
          }
       }.run();
 
-      new IOOperation<OutputStream>(buffOut(fileOut(bundleDir, toPomXmlPath(gav), true)))
+      new IOOperation<OutputStream>(buffOut(fileOut(bundleDir, toPomXmlPath(gav.getArtifactConflictKey()), true)))
       {
          @Override
          protected void run(OutputStream outputStream) throws IOException
@@ -387,17 +388,17 @@ public final class MavenizorTestHarness
       }.run();
    }
 
-   private static String toPomPropertiesPath(final Identifiable ga)
+   private static String toPomPropertiesPath(final ArtifactConflictKey ga)
    {
       return "META-INF/maven/" + ga.getGroupId() + "/" + ga.getArtifactId() + "/pom.properties";
    }
 
-   private static String toPomXmlPath(final Identifiable ga)
+   private static String toPomXmlPath(final ArtifactConflictKey ga)
    {
       return "META-INF/maven/" + ga.getGroupId() + "/" + ga.getArtifactId() + "/pom.xml";
    }
 
-   private static PropertiesMap toPomProperties(final VersionedIdentifiable gav)
+   private static PropertiesMap toPomProperties(final ProjectKey gav)
    {
       final PropertiesMap pomProps = new LinkedPropertiesMap();
       pomProps.put("groupId", gav.getGroupId());
@@ -406,7 +407,7 @@ public final class MavenizorTestHarness
       return pomProps;
    }
 
-   private static Document toPomXml(final VersionedIdentifiable gav)
+   private static Document toPomXml(final ProjectKey gav)
    {
       Document doc = XmlUtils.newDocument();
 
