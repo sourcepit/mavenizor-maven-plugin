@@ -55,7 +55,7 @@ import org.sourcepit.common.maven.model.ProjectKey;
 import org.sourcepit.common.utils.file.FileUtils;
 import org.sourcepit.common.utils.file.FileVisitor;
 import org.sourcepit.common.utils.io.IOOperation;
-import org.sourcepit.common.utils.io.factories.JarOutputStreamHandle;
+import org.sourcepit.common.utils.io.handles.JarOutputStreamHandle;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.path.PathUtils;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
