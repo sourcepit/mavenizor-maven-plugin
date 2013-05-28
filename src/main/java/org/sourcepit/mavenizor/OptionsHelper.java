@@ -87,7 +87,7 @@ public class OptionsHelper
       return defaultValue;
    }
 
-   public boolean isMatch(Requirement requirement, PropertiesMap options, String optionName)
+   public boolean isMatch(Requirement requirement, PropertiesMap options, String optionName, boolean defaultValue)
    {
       final LinkedHashMap<String, String> bundleOptions = getBundleOptions(requirement.getFrom(), options, optionName,
          CompareMode.MATCH_PATTERN);
@@ -99,7 +99,7 @@ public class OptionsHelper
             return true;
          }
       }
-      return false;
+      return defaultValue;
    }
 
    private boolean isMatch(BundleDescription bundle, String patterns)

@@ -111,42 +111,42 @@ public class OptionsHelperTest extends GuplexTest
 
       options = new LinkedPropertiesMap();
       options.put("@foo", "org.**");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertTrue(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("@foo", "!org.**");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertFalse(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("**@foo", "org.**");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertTrue(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("!**@foo", "org.**");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertFalse(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("org.sourcepit.bundle.a@foo", "org.sourcepit.bundle.b");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertTrue(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("org.sourcepit.bundle.a_1.0.0.qualifier@foo", "org.sourcepit.bundle.b_1.0.0.qualifier");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertTrue(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("org.**,!org.sourcepit.bundle.b@foo", "org.sourcepit.bundle.b");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertTrue(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertTrue(optionsHelper.isMatch(requirement, options, "@foo", false));
 
       options = new LinkedPropertiesMap();
       options.put("org.sourcepit.bundle.a@foo", "!org.sourcepit.bundle.b");
-      assertFalse(optionsHelper.isMatch(requirement, options, "@murks"));
-      assertFalse(optionsHelper.isMatch(requirement, options, "@foo"));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@murks", false));
+      assertFalse(optionsHelper.isMatch(requirement, options, "@foo", false));
    }
 }

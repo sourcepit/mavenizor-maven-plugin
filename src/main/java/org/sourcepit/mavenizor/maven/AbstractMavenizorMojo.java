@@ -6,6 +6,8 @@
 
 package org.sourcepit.mavenizor.maven;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -104,6 +106,9 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
 
    /** @parameter */
    private List<String> libraryMappings;
+
+   /** @parameter */
+   private List<RequirementFilter> requirementFilters;
 
    /** @parameter */
    private TargetType targetType;
@@ -403,6 +408,26 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
                throw Exceptions.pipe(new MojoExecutionException("Invalid library mapping " + libraryMapping));
             }
             options.put(split[0], split[1]);
+         }
+      }
+
+      if (requirementFilters != null)
+      {
+         for (RequirementFilter requirementFilter : requirementFilters)
+         {
+            final String bundlePattern = requirementFilter.getBundle().trim();
+
+            final String permitted = requirementFilter.getPermitted();
+            if (!isNullOrEmpty(permitted))
+            {
+               options.put(bundlePattern + "@requirements.permitted", permitted.trim());
+            }
+
+            final String erase = requirementFilter.getErase();
+            if (!isNullOrEmpty(erase))
+            {
+               options.put(bundlePattern + "@requirements.erase", erase.trim());
+            }
          }
       }
 

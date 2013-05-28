@@ -249,6 +249,18 @@ public class DefaultMavenizor implements Mavenizor
       final Collection<Requirement> requirements = requirementsCollector.collectRequirements(bundle);
       for (Requirement requirement : requirements)
       {
+         if (optionsHelper.isMatch(requirement, options, "@requirements.erase", false))
+         {
+            log.info("Omitting requirement from " + requirement.getFrom() + " to " + requirement.getTo());
+            continue;
+         }
+
+         if (!optionsHelper.isMatch(requirement, options, "@requirements.permited", true))
+         {
+            throw new IllegalStateException("Requirement from " + requirement.getFrom() + " to " + requirement.getTo()
+               + " is not permitted.");
+         }
+
          final BundleDescription requiredBundle = requirement.getTo();
          final BundleConverter.Result converterResult = convertOnDemand(request, requiredBundle, result);
 
@@ -280,12 +292,12 @@ public class DefaultMavenizor implements Mavenizor
                }
 
 
-               if (optionsHelper.isMatch(requirement, options, "@requirements.provided"))
+               if (optionsHelper.isMatch(requirement, options, "@requirements.provided", false))
                {
                   dependency.setScope(Artifact.SCOPE_PROVIDED);
                }
 
-               if (optionsHelper.isMatch(requirement, options, "@requirements.optional"))
+               if (optionsHelper.isMatch(requirement, options, "@requirements.optional", false))
                {
                   dependency.setOptional(true);
                }
