@@ -28,9 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -55,20 +53,12 @@ import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.path.PathUtils;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.common.utils.xml.XmlUtils;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
-import org.w3c.dom.Document;
 
 @Named
 public class DefaultBundleConverter implements BundleConverter
 {
-   private static final Set<String> SUPPORTED_PACKAGINGS = new HashSet<String>();
-   static
-   {
-      SUPPORTED_PACKAGINGS.add("jar");
-   }
-
    private final Logger log;
 
    @Inject
@@ -329,7 +319,7 @@ public class DefaultBundleConverter implements BundleConverter
 
    private static MavenArtifact toMavenArtifact(final PropertiesMap pomProperties, final File artifactFile)
    {
-      if (pomProperties.isEmpty())
+      if (pomProperties.isEmpty() || !(artifactFile.isDirectory() || artifactFile.getPath().endsWith(".jar")))
       {
          return null;
       }
@@ -339,42 +329,7 @@ public class DefaultBundleConverter implements BundleConverter
       artifact.setArtifactId(pomProperties.get("artifactId"));
       artifact.setVersion(pomProperties.get("version"));
       artifact.setFile(artifactFile);
-
-      final String packaging = determineMavenPackaging(artifact);
-      if (SUPPORTED_PACKAGINGS.contains(packaging))
-      {
-         return artifact;
-      }
-      return null;
-   }
-
-   private static String determineMavenPackaging(final MavenArtifact artifact)
-   {
-      final String[] packaging = new String[1];
-      final String pomPath = "META-INF/maven/" + artifact.getGroupId() + "/" + artifact.getArtifactId() + "/pom.xml";
-      IOOperation<InputStream> ioop = new IOOperation<InputStream>(osgiIn(artifact.getFile(), pomPath))
-      {
-         @Override
-         protected void run(InputStream inputStream) throws IOException
-         {
-            Document document = XmlUtils.readXml(inputStream);
-            String result = XmlUtils.queryText(document, "/project/packaging");
-            packaging[0] = "".equals(result) ? null : result;
-         }
-      };
-      try
-      {
-         ioop.run();
-      }
-      catch (PipedIOException e)
-      {
-         if (e.adapt(FileNotFoundException.class) != null)
-         {
-            return null;
-         }
-         throw e;
-      }
-      return packaging[0] == null ? "jar" : packaging[0];
+      return artifact;
    }
 
    private static PropertiesMap loadPomPropertiesFromBundle(BundleDescription bundle)
