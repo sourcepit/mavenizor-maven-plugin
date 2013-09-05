@@ -20,7 +20,7 @@
 	<properties>
 		<tests.dir>${project.build.directory}/tests</tests.dir>
 		<tests.user.home>${tests.dir}/user.home</tests.user.home>
-		<tycho.version>0.18.0</tycho.version>
+		<tycho.version>0.18.1</tycho.version>
 	</properties>
 
 	<repositories>
