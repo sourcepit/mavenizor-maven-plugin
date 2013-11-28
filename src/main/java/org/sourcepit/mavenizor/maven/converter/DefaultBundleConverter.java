@@ -48,11 +48,13 @@ import org.sourcepit.common.utils.file.FileVisitor;
 import org.sourcepit.common.utils.io.DualIOOperation;
 import org.sourcepit.common.utils.io.IOHandle;
 import org.sourcepit.common.utils.io.IOOperation;
+import org.sourcepit.common.utils.io.UnclosableInputStream;
 import org.sourcepit.common.utils.lang.PipedIOException;
 import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.path.PathUtils;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
+import org.sourcepit.common.utils.xml.XmlUtils;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 
@@ -273,6 +275,11 @@ public class DefaultBundleConverter implements BundleConverter
       MavenArtifact artifact = detectMavenArtifactFromManifest(bundle);
       if (artifact == null)
       {
+         final String mavenPackaging = getMavenPackaging(bundle);
+         if (mavenPackaging != null && mavenPackaging.startsWith("eclipse-")) // force mavenization of tycho artifacts
+         {
+            return null;
+         }
          final PropertiesMap pomProperties = loadPomPropertiesFromBundle(bundle);
          artifact = toMavenArtifact(pomProperties, getBundleLocation(bundle));
       }
@@ -313,6 +320,11 @@ public class DefaultBundleConverter implements BundleConverter
 
    private static MavenArtifact detectMavenArtifactFromLib(final File libFile)
    {
+      final String mavenPackaging = getMavenPackagingFromLib(libFile);
+      if (mavenPackaging != null && mavenPackaging.startsWith("eclipse-")) // force mavenization of tycho artifacts
+      {
+         return null;
+      }
       final PropertiesMap pomProperties = loadPomPropertiesFromLib(libFile);
       return toMavenArtifact(pomProperties, libFile);
    }
@@ -330,6 +342,100 @@ public class DefaultBundleConverter implements BundleConverter
       artifact.setVersion(pomProperties.get("version"));
       artifact.setFile(artifactFile);
       return artifact;
+   }
+
+   private static String getMavenPackaging(BundleDescription bundle)
+   {
+      final List<String> paths = new ArrayList<String>();
+
+      String packaging = null;
+
+      final File bundleLocation = getBundleLocation(bundle);
+      if (bundleLocation.isDirectory())
+      {
+         packaging = getMavenPackagingFromDir(paths, bundleLocation);
+      }
+      else
+      {
+         packaging = getMavenPackagingFromLib(paths, bundleLocation);
+      }
+
+      if (paths.size() != 1)
+      {
+         return null;
+      }
+
+      return packaging;
+   }
+
+   private static String getMavenPackagingFromDir(final Collection<String> paths, final File dir)
+   {
+      final String[] packaging = new String[1];
+      FileUtils.accept(new File(dir, "META-INF/maven"), new FileVisitor()
+      {
+         public boolean visit(File file)
+         {
+            final Path path = new Path(PathUtils.getRelativePath(file, dir, "/"));
+            if (isPomPath(path))
+            {
+               paths.add(path.toString());
+               packaging[0] = XmlUtils.queryText(XmlUtils.readXml(file), "/project/packaging");
+            }
+            return true;
+         }
+      });
+      return packaging[0];
+   }
+
+   private static String getMavenPackagingFromLib(final Collection<String> paths, final File libFile)
+   {
+      final String[] packaging = new String[1];
+      new IOOperation<ZipInputStream>(zipIn(buffIn(fileIn(libFile))))
+      {
+         @Override
+         protected void run(final ZipInputStream zipIn) throws IOException
+         {
+            ZipEntry zipEntry = zipIn.getNextEntry();
+            while (zipEntry != null)
+            {
+               if (isPomEntry(zipEntry))
+               {
+                  paths.add(zipEntry.getName());
+                  UnclosableInputStream in = new UnclosableInputStream()
+                  {
+                     @Override
+                     protected InputStream openInputStream() throws IOException
+                     {
+                        return zipIn;
+                     }
+                  };
+                  packaging[0] = XmlUtils.queryText(XmlUtils.readXml(in), "/project/packaging");
+               }
+               zipEntry = zipIn.getNextEntry();
+            }
+         }
+
+         private boolean isPomEntry(ZipEntry zipEntry)
+         {
+            if (!zipEntry.isDirectory())
+            {
+               return isPomPath(new Path(zipEntry.getName()));
+            }
+            return false;
+         }
+      }.run();
+      return packaging[0];
+   }
+
+   private static String getMavenPackagingFromLib(final File libFile)
+   {
+      final List<String> paths = new ArrayList<String>();
+      final String packaging = getMavenPackagingFromLib(paths, libFile);
+      if (paths.size() != 1)
+      {
+         return null;
+      }
+      return packaging;
    }
 
    private static PropertiesMap loadPomPropertiesFromBundle(BundleDescription bundle)
@@ -483,6 +589,19 @@ public class DefaultBundleConverter implements BundleConverter
    {
       final String pathString = path.toString();
       if (pathString.startsWith("META-INF/maven/") && pathString.endsWith("/pom.properties"))
+      {
+         if (path.getSegments().size() == 5)
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private static boolean isPomPath(final Path path)
+   {
+      final String pathString = path.toString();
+      if (pathString.startsWith("META-INF/maven/") && pathString.endsWith("/pom.xml"))
       {
          if (path.getSegments().size() == 5)
          {
