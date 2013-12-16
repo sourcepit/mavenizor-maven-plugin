@@ -56,7 +56,7 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-utils</artifactId>
-			<version>0.1.0-alpha-8</version>
+			<version>0.1.0-alpha-9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
@@ -66,17 +66,17 @@
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-manifest</artifactId>
-			<version>0.1.0-alpha-10</version>
+			<version>0.1.0-alpha-11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit.common</groupId>
 			<artifactId>common-maven</artifactId>
-			<version>0.1.0-alpha-12</version>
+			<version>0.1.0-alpha-13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit.tools</groupId>
 			<artifactId>shared-resources-harness</artifactId>
-			<version>0.1.0-alpha-5</version>
+			<version>0.1.0-alpha-6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sourcepit</groupId>
