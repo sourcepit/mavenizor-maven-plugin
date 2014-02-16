@@ -61,28 +61,35 @@ public class DefaultGAVStrategy implements GAVStrategy
 
    public String deriveGroupId(@NotNull BundleDescription bundle)
    {
-      final String groupId = applyGroupIdMapping(deriveGroupId(bundle.getSymbolicName()));
-      if (groupIdPrefix == null)
+      final String symbolicName = bundle.getSymbolicName();
+
+      String groupId = applyGroupIdMapping(symbolicName);
+      if (groupId == null)
       {
-         return groupId;
+         groupId = deriveGroupId(symbolicName);
       }
-      return groupIdPrefix + groupId;
+      if (groupIdPrefix != null)
+      {
+         groupId = groupIdPrefix + groupId;
+      }
+      return groupId;
    }
 
-   private String applyGroupIdMapping(final String groupId)
+   private String applyGroupIdMapping(final String symbolicName)
    {
       for (Entry<String, String> entry : groupIdMappings.entrySet())
       {
          final PathMatcher matcher = PathMatcher.parsePackagePatterns(entry.getKey());
-         if (matcher.isMatch(groupId))
+         if (matcher.isMatch(symbolicName))
          {
             PropertiesMap props = new LinkedPropertiesMap(1);
-            props.put("bundle.groupId", groupId);
-            
+            props.put("bundle.groupId", deriveGroupId(symbolicName));
+            props.put("bundle.symbolicName", symbolicName);
+
             return interpolate(props, entry.getValue());
          }
       }
-      return groupId;
+      return null;
    }
 
    private static String interpolate(final PropertiesSource moduleProperties, String value)
