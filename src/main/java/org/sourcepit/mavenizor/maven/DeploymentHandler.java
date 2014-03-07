@@ -21,34 +21,32 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.deployer.ArtifactDeploymentException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Reader;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.impl.MetadataResolver;
+import org.eclipse.aether.impl.RepositoryConnectorProvider;
+import org.eclipse.aether.metadata.DefaultMetadata;
+import org.eclipse.aether.metadata.Metadata;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
+import org.eclipse.aether.resolution.MetadataRequest;
+import org.eclipse.aether.resolution.MetadataResult;
+import org.eclipse.aether.spi.connector.ArtifactDownload;
+import org.eclipse.aether.spi.connector.RepositoryConnector;
+import org.eclipse.aether.transfer.ArtifactNotFoundException;
+import org.eclipse.aether.transfer.ArtifactTransferException;
+import org.eclipse.aether.transfer.MetadataNotFoundException;
+import org.eclipse.aether.transfer.NoRepositoryConnectorException;
+import org.eclipse.aether.util.ChecksumUtils;
 import org.slf4j.Logger;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.impl.MetadataResolver;
-import org.sonatype.aether.impl.RemoteRepositoryManager;
-import org.sonatype.aether.metadata.Metadata;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.repository.RepositoryPolicy;
-import org.sonatype.aether.resolution.MetadataRequest;
-import org.sonatype.aether.resolution.MetadataResult;
-import org.sonatype.aether.spi.connector.ArtifactDownload;
-import org.sonatype.aether.spi.connector.RepositoryConnector;
-import org.sonatype.aether.transfer.ArtifactNotFoundException;
-import org.sonatype.aether.transfer.ArtifactTransferException;
-import org.sonatype.aether.transfer.MetadataNotFoundException;
-import org.sonatype.aether.transfer.NoRepositoryConnectorException;
-import org.sonatype.aether.util.ChecksumUtils;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
-import org.sonatype.aether.util.metadata.DefaultMetadata;
 import org.sourcepit.common.utils.lang.Exceptions;
 
-@SuppressWarnings("deprecation")
 public final class DeploymentHandler extends AbstractDistributionHandler
 {
-   private final RemoteRepositoryManager remoteRepositoryManager;
+   private final RepositoryConnectorProvider repositoryConnectorProvider;
    private final RepositorySystemSession repositorySession;
    private final ArtifactDeployer deployer;
    private final ArtifactRepository localRepository;
@@ -56,12 +54,12 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    private final ArtifactRepository releaseRepository;
    private final MetadataResolver metadataResolver;
 
-   public DeploymentHandler(Logger log, RemoteRepositoryManager remoteRepositoryManager,
+   public DeploymentHandler(Logger log, RepositoryConnectorProvider repositoryConnectorProvider,
       RepositorySystemSession repositorySession, ArtifactDeployer deployer, ArtifactRepository localRepository,
       ArtifactRepository snapshotRepository, ArtifactRepository releaseRepository, MetadataResolver metadataResolver)
    {
       super(log);
-      this.remoteRepositoryManager = remoteRepositoryManager;
+      this.repositoryConnectorProvider = repositoryConnectorProvider;
       this.repositorySession = repositorySession;
       this.deployer = deployer;
       this.localRepository = localRepository;
@@ -94,25 +92,13 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    protected String getTargetChecksum(Artifact artifact)
    {
       final ArtifactRepository deploymentRepository = determineDeploymentRepository(artifact);
-
       final RemoteRepository remoteRepo = RepositoryUtils.toRepo(deploymentRepository);
-      /*
-       * NOTE: This provides backward-compat with maven-deploy-plugin:2.4 which bypasses the repository factory when
-       * using an alternative deployment location.
-       */
-      if (deploymentRepository instanceof DefaultArtifactRepository && deploymentRepository.getAuthentication() == null)
-      {
-         remoteRepo.setAuthentication(repositorySession.getAuthenticationSelector().getAuthentication(remoteRepo));
-         remoteRepo.setProxy(repositorySession.getProxySelector().getProxy(remoteRepo));
-      }
-
-      final String remoteChecksum = readRemoteChecksum(remoteRepo, RepositoryUtils.toArtifact(artifact));
-      return remoteChecksum;
+      return readRemoteChecksum(remoteRepo, RepositoryUtils.toArtifact(artifact));
    }
 
-   private String readRemoteChecksum(RemoteRepository remoteRepository, org.sonatype.aether.artifact.Artifact artifact)
+   private String readRemoteChecksum(RemoteRepository remoteRepository, org.eclipse.aether.artifact.Artifact artifact)
    {
-      final org.sonatype.aether.artifact.Artifact sha1Artifact = toSha1Artifact(expandSnapshotVersion(remoteRepository,
+      final org.eclipse.aether.artifact.Artifact sha1Artifact = toSha1Artifact(expandSnapshotVersion(remoteRepository,
          artifact));
 
       final String sha1Path = repositorySession.getLocalRepositoryManager().getPathForLocalArtifact(sha1Artifact) + "_"
@@ -149,7 +135,7 @@ public final class DeploymentHandler extends AbstractDistributionHandler
       RepositoryConnector connector = null;
       try
       {
-         connector = remoteRepositoryManager.getRepositoryConnector(repositorySession, remoteRepository);
+         connector = repositoryConnectorProvider.newRepositoryConnector(repositorySession, remoteRepository);
       }
       catch (NoRepositoryConnectorException e)
       {
@@ -182,14 +168,14 @@ public final class DeploymentHandler extends AbstractDistributionHandler
       }
    }
 
-   private org.sonatype.aether.artifact.Artifact toSha1Artifact(org.sonatype.aether.artifact.Artifact artifact)
+   private org.eclipse.aether.artifact.Artifact toSha1Artifact(org.eclipse.aether.artifact.Artifact artifact)
    {
       return new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(),
          artifact.getExtension() + ".sha1", artifact.getVersion());
    }
 
-   private org.sonatype.aether.artifact.Artifact expandSnapshotVersion(final RemoteRepository remoteRepo,
-      org.sonatype.aether.artifact.Artifact artifact)
+   private org.eclipse.aether.artifact.Artifact expandSnapshotVersion(final RemoteRepository remoteRepo,
+      org.eclipse.aether.artifact.Artifact artifact)
    {
       final String groupId = artifact.getGroupId();
       final String artifactId = artifact.getArtifactId();

@@ -17,17 +17,17 @@ import java.util.LinkedHashMap;
 import javax.inject.Inject;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.eclipse.sisu.launch.InjectedTest;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.Test;
 import org.osgi.framework.Version;
 import org.sourcepit.common.utils.props.LinkedPropertiesMap;
 import org.sourcepit.common.utils.props.PropertiesMap;
-import org.sourcepit.guplex.test.GuplexTest;
 import org.sourcepit.mavenizor.OptionsHelper.CompareMode;
 import org.sourcepit.mavenizor.state.Requirement;
 
-public class OptionsHelperTest extends GuplexTest
+public class OptionsHelperTest extends InjectedTest
 {
    @Inject
    private OptionsHelper optionsHelper;

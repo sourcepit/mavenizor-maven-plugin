@@ -15,20 +15,22 @@ import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.sonatype.aether.impl.MetadataResolver;
-import org.sonatype.aether.impl.RemoteRepositoryManager;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.eclipse.aether.impl.MetadataResolver;
+import org.eclipse.aether.impl.RepositoryConnectorProvider;
 import org.sourcepit.common.maven.util.MavenProjectUtils;
 
 /**
- * @requiresDependencyResolution test
- * @goal deploy-bundles
- * @phase deploy
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
+@Mojo(name = "deploy-bundles", defaultPhase = LifecyclePhase.DEPLOY, requiresDependencyResolution = ResolutionScope.TEST)
 public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
 {
    @Inject
-   private RemoteRepositoryManager remoteRepositoryManager;
+   private RepositoryConnectorProvider repositoryConnectorProvider;
 
    @Inject
    private ArtifactDeployer deployer;
@@ -36,7 +38,7 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
    @Inject
    private Map<String, ArtifactRepositoryLayout> repositoryLayouts;
 
-   /** @parameter expression="${altDeploymentRepository}" */
+   @Parameter(property = "altDeploymentRepository")
    private String altDeploymentRepository;
 
    @Inject
@@ -59,7 +61,7 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
          snapshotRepository = deploymentRepository;
          releaseRepository = deploymentRepository;
       }
-      return new DeploymentHandler(logger, remoteRepositoryManager, session.getRepositorySession(), deployer,
+      return new DeploymentHandler(logger, repositoryConnectorProvider, session.getRepositorySession(), deployer,
          localRepository, snapshotRepository, releaseRepository, metadataResolver);
    }
 

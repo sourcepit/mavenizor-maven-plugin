@@ -11,13 +11,14 @@ import javax.inject.Inject;
 
 import org.apache.maven.artifact.installer.ArtifactInstaller;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 /**
- * @requiresDependencyResolution test
- * @goal install-bundles
- * @phase install
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
+@Mojo(name = "install-bundles", defaultPhase = LifecyclePhase.INSTALL, requiresDependencyResolution = ResolutionScope.TEST)
 public class MavenizorInstallMojo extends AbstractDistributingMavenizorMojo
 {
    @Inject

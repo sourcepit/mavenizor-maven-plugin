@@ -14,6 +14,7 @@ import javax.inject.Inject;
 
 import org.apache.maven.artifact.InvalidRepositoryException;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.repository.RepositorySystem;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.utils.lang.Exceptions;
@@ -33,13 +34,13 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
    @Inject
    protected RepositorySystem repositorySystem;
 
-   /** @parameter expression="${localRepository}" */
+   @Parameter(property = "localRepository")
    protected ArtifactRepository localRepository;
 
-   /** @parameter expression="${localRepositoryPath}" */
+   @Parameter(property = "localRepositoryPath")
    protected File localRepositoryPath;
 
-   /** @parameter expression="${forceOverwrite}" default-value=false */
+   @Parameter(property = "forceOverwrite", defaultValue = "false")
    protected boolean forceOverwrite;
 
    @Override

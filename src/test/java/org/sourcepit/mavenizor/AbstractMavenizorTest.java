@@ -9,23 +9,17 @@ package org.sourcepit.mavenizor;
 import java.io.File;
 import java.io.IOException;
 
+import org.eclipse.sisu.launch.InjectedTest;
 import org.junit.Rule;
 import org.sourcepit.common.testing.Environment;
 import org.sourcepit.common.testing.Workspace;
-import org.sourcepit.guplex.test.GuplexTest;
 
-public abstract class AbstractMavenizorTest extends GuplexTest
+public abstract class AbstractMavenizorTest extends InjectedTest
 {
    private final Environment env = newEnvironment();
 
    @Rule
    public Workspace ws = newWorkspace();
-
-   @Override
-   protected boolean isUseIndex()
-   {
-      return true;
-   }
 
    protected Workspace newWorkspace()
    {

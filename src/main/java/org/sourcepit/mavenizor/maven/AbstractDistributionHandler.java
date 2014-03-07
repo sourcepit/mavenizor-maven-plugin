@@ -14,7 +14,7 @@ import java.util.Map;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.slf4j.Logger;
-import org.sonatype.aether.util.ChecksumUtils;
+import org.eclipse.aether.util.ChecksumUtils;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.mavenizor.maven.ArtifactBundleDistributor.DistributionHandler;
 

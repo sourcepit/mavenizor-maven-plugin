@@ -17,10 +17,14 @@ import java.util.Properties;
 import java.util.Set;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
@@ -56,9 +60,7 @@ import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 import org.sourcepit.mavenizor.state.OsgiStateBuilder;
 
-import com.google.inject.name.Named;
-
-public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
+public abstract class AbstractMavenizorMojo extends AbstractMojo
 {
    private final class MultiProperty extends HashSet<String>
    {
@@ -74,46 +76,46 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    @Inject
    protected Logger logger;
 
-   /** @parameter expression="${session}" */
+   @Parameter(property = "session")
    protected MavenSession session;
 
-   /** @parameter expression="${project}" */
+   @Parameter(property = "project")
    protected MavenProject project;
 
-   /** @parameter */
+   @Parameter
    private Properties options;
 
-   /** @parameter expression="${workingDir}" default-value="${project.build.directory}/mavenizor" */
+   @Parameter(property = "workingDir", defaultValue = "${project.build.directory}/mavenizor")
    protected File workingDir;
 
-   /** @parameter default-value=false */
+   @Parameter(defaultValue = "false")
    private boolean trimQualifiers;
 
-   /** @parameter */
+   @Parameter
    private String groupIdPrefix;
 
-   /** @parameter */
+   @Parameter
    private Set<String> group3Prefixes;
 
-   /** @parameter */
+   @Parameter
    private List<String> groupIdMappings;
 
-   /** @parameter expression="${dryRun}" default-value=false */
+   @Parameter(property = "dryRun", defaultValue = "false")
    private boolean dryRun;
 
-   /** @parameter */
+   @Parameter
    private List<String> inputBundles;
 
-   /** @parameter */
+   @Parameter
    private List<String> libraryMappings;
 
-   /** @parameter */
+   @Parameter
    private List<RequirementFilter> requirementFilters;
 
-   /** @parameter */
+   @Parameter
    private TargetType targetType;
 
-   /** @parameter expression="${projectFilter}" default-value="**" */
+   @Parameter(property = "projectFilter", defaultValue = "**")
    private String projectFilter;
 
    private Set<File> bundleLocationsInBuildScope;
@@ -131,12 +133,25 @@ public abstract class AbstractMavenizorMojo extends AbstractGuplexedMojo
    @Inject
    private Map<String, TychoProject> projectTypes;
 
+   public final void execute() throws MojoExecutionException, MojoFailureException
+   {
+      try
+      {
+         doExecute();
+      }
+      catch (PipedException e)
+      {
+         e.adaptAndThrow(MojoExecutionException.class);
+         e.adaptAndThrow(MojoFailureException.class);
+         throw new MojoExecutionException(e.getCause().getMessage(), e.getCause());
+      }
+   }
+
    public void setTargetType(String targetType)
    {
       this.targetType = TargetType.valueOfLiteral(targetType);
    }
 
-   @Override
    protected void doExecute() throws PipedException
    {
       final PathMatcher projectMatcher = PathMatcher.parsePackagePatterns(projectFilter);
