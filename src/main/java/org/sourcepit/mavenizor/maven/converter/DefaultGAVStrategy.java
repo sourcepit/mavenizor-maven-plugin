@@ -6,6 +6,8 @@
 
 package org.sourcepit.mavenizor.maven.converter;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,8 +17,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import org.sourcepit.common.constraints.NotNull;
 
 import org.codehaus.plexus.interpolation.AbstractValueSource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
@@ -106,8 +107,9 @@ public class DefaultGAVStrategy implements GAVStrategy
       return s.interpolate(value);
    }
 
-   private String deriveGroupId(@NotNull @Size(min = 1) String symbolicName)
+   private String deriveGroupId(@NotNull String symbolicName)
    {
+      checkArgument(symbolicName.length() > 0);
       Matcher m = null;
 
       for (String group3Prefix : group3Prefixes)
@@ -136,8 +138,9 @@ public class DefaultGAVStrategy implements GAVStrategy
       return deriveArtifactId(bundle.getSymbolicName());
    }
 
-   private String deriveArtifactId(@NotNull @Size(min = 1) String symbolicName)
+   private String deriveArtifactId(@NotNull String symbolicName)
    {
+      checkArgument(symbolicName.length() > 0);
       return symbolicName;
    }
 

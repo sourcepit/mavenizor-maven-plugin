@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
 import static org.sourcepit.mavenizor.MavenizorTestHarness.newBundleDescription;
 
 import javax.inject.Inject;
-import javax.validation.ConstraintViolationException;
+import java.lang.IllegalArgumentException;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.junit.Test;
@@ -36,7 +36,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveGroupId((BundleDescription) null);
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -45,7 +45,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveGroupId(newBundleDescription(null));
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -54,7 +54,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveGroupId(newBundleDescription(""));
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -166,7 +166,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveArtifactId((BundleDescription) null);
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -175,7 +175,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveArtifactId(newBundleDescription(null));
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -184,7 +184,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveArtifactId(newBundleDescription(""));
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -214,7 +214,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveMavenVersion(null);
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -298,7 +298,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveMavenVersionRange(null, null);
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 
@@ -308,7 +308,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
          converter.deriveMavenVersionRange(bundle, null);
          fail();
       }
-      catch (ConstraintViolationException e)
+      catch (IllegalArgumentException e)
       {
       }
 

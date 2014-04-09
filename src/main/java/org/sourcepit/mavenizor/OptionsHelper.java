@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import javax.inject.Named;
-import javax.validation.constraints.NotNull;
+import org.sourcepit.common.constraints.NotNull;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.utils.path.PathMatcher;
