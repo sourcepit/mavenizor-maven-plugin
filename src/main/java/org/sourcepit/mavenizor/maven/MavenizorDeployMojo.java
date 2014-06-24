@@ -21,7 +21,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.eclipse.aether.impl.MetadataResolver;
 import org.eclipse.aether.impl.RepositoryConnectorProvider;
-import org.sourcepit.common.maven.util.MavenProjectUtils;
+import org.sourcepit.common.maven.core.MavenProjectUtils;
 
 /**
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
