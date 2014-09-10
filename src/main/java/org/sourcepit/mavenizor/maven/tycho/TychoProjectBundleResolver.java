@@ -21,14 +21,15 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.tycho.ArtifactDescriptor;
 import org.eclipse.tycho.ArtifactKey;
+import org.eclipse.tycho.PackagingType;
 import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.artifacts.DependencyArtifacts;
 import org.eclipse.tycho.artifacts.TargetPlatform;
+import org.eclipse.tycho.core.DependencyResolver;
 import org.eclipse.tycho.core.DependencyResolverConfiguration;
 import org.eclipse.tycho.core.TargetPlatformConfiguration;
-import org.eclipse.tycho.core.TargetPlatformResolver;
 import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
-import org.eclipse.tycho.core.resolver.DefaultTargetPlatformResolverFactory;
+import org.eclipse.tycho.core.resolver.DefaultDependencyResolverFactory;
 import org.eclipse.tycho.core.resolver.shared.OptionalResolutionAction;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.sourcepit.common.utils.lang.Exceptions;
@@ -38,7 +39,7 @@ import org.sourcepit.mavenizor.maven.BundleResolver;
 public class TychoProjectBundleResolver implements BundleResolver
 {
    @Inject
-   private DefaultTargetPlatformResolverFactory targetPlatformResolverLocator;
+   private DefaultDependencyResolverFactory targetPlatformResolverLocator;
 
    @Inject
    private TychoSourceIUResolver sourceResolver;
@@ -47,7 +48,7 @@ public class TychoProjectBundleResolver implements BundleResolver
    {
       final MavenProject project = session.getCurrentProject();
 
-      TargetPlatformResolver platformResolver = targetPlatformResolverLocator.lookupPlatformResolver(project);
+      DependencyResolver platformResolver = targetPlatformResolverLocator.lookupDependencyResolver(project);
 
       TargetPlatformConfiguration configuration = TychoProjectUtils.getTargetPlatformConfiguration(project);
 
@@ -57,7 +58,8 @@ public class TychoProjectBundleResolver implements BundleResolver
 
       // TODO 364134 re-use target platform from dependency resolution
       List<ReactorProject> reactorProjects = DefaultReactorProject.adapt(session);
-      TargetPlatform targetPlatform = platformResolver.computeTargetPlatform(session, project, reactorProjects, false);
+      TargetPlatform targetPlatform = platformResolver.computePreliminaryTargetPlatform(session, project,
+         reactorProjects);
 
       final DependencyResolverConfiguration resolverConfiguration = new DependencyResolverConfiguration()
       {
@@ -82,7 +84,7 @@ public class TychoProjectBundleResolver implements BundleResolver
 
       final Set<String> sourceTargetBundles = new LinkedHashSet<String>();
 
-      for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(ArtifactKey.TYPE_ECLIPSE_PLUGIN))
+      for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(PackagingType.TYPE_ECLIPSE_PLUGIN))
       {
          ReactorProject mavenProject = artifact.getMavenProject();
          if (mavenProject == null)

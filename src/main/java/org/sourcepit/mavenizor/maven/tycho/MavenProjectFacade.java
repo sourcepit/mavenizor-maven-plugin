@@ -27,7 +27,7 @@ import org.eclipse.tycho.core.TychoProject;
 import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult.Entry;
-import org.eclipse.tycho.resolver.TychoDependencyResolver;
+import org.eclipse.tycho.resolver.TychoResolver;
 
 import com.google.common.base.Optional;
 
@@ -38,7 +38,7 @@ public class MavenProjectFacade
    private Map<String, TychoProject> projectTypes;
 
    @Inject
-   private TychoDependencyResolver resolver;
+   private TychoResolver resolver;
 
    public TychoProject getTychoProject(MavenProject project)
    {
