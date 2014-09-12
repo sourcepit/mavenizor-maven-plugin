@@ -333,7 +333,7 @@ public class TychoSourceIUResolver
 
       public P2TargetPlatformDAO(ClassLoader classLoader)
       {
-         super(classLoader, "org.eclipse.tycho.artifacts.p2.P2TargetPlatform");
+         super(classLoader, "org.eclipse.tycho.p2.target.P2TargetPlatform");
       }
 
       public InstallableUnitDAO getInstallableUnitDAO()
