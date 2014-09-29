@@ -1,7 +1,17 @@
-/**
- * Copyright (c) 2012 Sourcepit.org contributors and others. All rights reserved. This program and the accompanying
- * materials are made available under the terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
+/*
+ * Copyright 2014 Bernd Vogt and others.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.sourcepit.mavenizor.maven.converter;
@@ -266,13 +276,8 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    @Test
    public void testAutoDetectLibrary()
    {
-      final ProjectKey expectedLib = new ArtifactKeyBuilder()
-         .setGroupId("hans")
-         .setArtifactId("wurst")
-         .setType("jar")
-         .setVersion("3")
-         .toArtifactKey()
-         .getProjectKey();
+      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
+         .setVersion("3").toArtifactKey().getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -303,21 +308,11 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    @Test
    public void testAutoDetectLibraryAmbiguous()
    {
-      final ProjectKey expectedLib = new ArtifactKeyBuilder()
-         .setGroupId("hans")
-         .setArtifactId("wurst")
-         .setType("jar")
-         .setVersion("3")
-         .toArtifactKey()
-         .getProjectKey();
+      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
+         .setVersion("3").toArtifactKey().getProjectKey();
 
-      final ProjectKey expectedLib2 = new ArtifactKeyBuilder()
-         .setGroupId("foo")
-         .setArtifactId("bar")
-         .setType("jar")
-         .setVersion("3")
-         .toArtifactKey()
-         .getProjectKey();
+      final ProjectKey expectedLib2 = new ArtifactKeyBuilder().setGroupId("foo").setArtifactId("bar").setType("jar")
+         .setVersion("3").toArtifactKey().getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -349,13 +344,8 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
          File bundleDir = newBundle(bundlesDir, mf);
          addEmbeddedLibrary(bundleDir, mf, "embedded.jar");
 
-         final ProjectKey expectedGAV = new ArtifactKeyBuilder()
-            .setGroupId("hans")
-            .setArtifactId("wurst").setType("jar")
-            .setType("jar")
-            .setVersion("3")
-            .toArtifactKey()
-            .getProjectKey();
+         final ProjectKey expectedGAV = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst")
+            .setType("jar").setType("jar").setVersion("3").toArtifactKey().getProjectKey();
 
          addMavenMetaData(bundleDir, expectedGAV);
 
