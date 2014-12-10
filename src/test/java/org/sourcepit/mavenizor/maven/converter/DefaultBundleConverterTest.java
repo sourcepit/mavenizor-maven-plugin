@@ -19,6 +19,7 @@ package org.sourcepit.mavenizor.maven.converter;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.sourcepit.common.utils.file.FileUtils.deleteFileOrDirectory;
 import static org.sourcepit.mavenizor.MavenizorTestHarness.addEmbeddedLibrary;
 import static org.sourcepit.mavenizor.MavenizorTestHarness.addMavenMetaData;
 import static org.sourcepit.mavenizor.MavenizorTestHarness.getBundle;
@@ -352,7 +353,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
          if (jar)
          {
             jar(bundleDir);
-            org.apache.commons.io.FileUtils.forceDelete(bundleDir);
+            deleteFileOrDirectory(bundleDir);
          }
 
          State state = newState(bundlesDir, mf);
