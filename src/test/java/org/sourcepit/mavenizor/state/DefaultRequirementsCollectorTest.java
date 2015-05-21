@@ -39,14 +39,12 @@ import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.mavenizor.AbstractMavenizorTest;
 import org.sourcepit.mavenizor.MavenizorTestHarness;
 
-public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
-{
+public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest {
    @Inject
    private DefaultRequirementsCollector collector;
 
    @Test
-   public void testSelfReference()
-   {
+   public void testSelfReference() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       addPackageImport(manifestA, "package.a", "[1,2)");
@@ -62,8 +60,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testPackageImport()
-   {
+   public void testPackageImport() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -89,8 +86,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testPackageImportIsOptional()
-   {
+   public void testPackageImportIsOptional() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -116,8 +112,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testPackageImportWithRecommendedVersion()
-   {
+   public void testPackageImportWithRecommendedVersion() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       save(manifestA);
@@ -143,8 +138,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testPackageImportWithRange()
-   {
+   public void testPackageImportWithRange() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       save(manifestA);
@@ -170,8 +164,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testPackageImportWithIntersectedRange()
-   {
+   public void testPackageImportWithIntersectedRange() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "4");
       addPackageExport(manifestA, "package.b", "4");
@@ -199,8 +192,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleRequirement()
-   {
+   public void testBundleRequirement() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -226,8 +218,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleRequirementIsOptional()
-   {
+   public void testBundleRequirementIsOptional() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -253,8 +244,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleRequirementWithRange()
-   {
+   public void testBundleRequirementWithRange() {
       final BundleManifest manifestA = newManifest("a", "1");
       save(manifestA);
 
@@ -279,8 +269,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixed()
-   {
+   public void testMixed() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -318,8 +307,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundle()
-   {
+   public void testMixedToSameBundle() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -346,8 +334,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundleWithRange()
-   {
+   public void testMixedToSameBundleWithRange() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       save(manifestA);
@@ -374,8 +361,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundleWithRange2()
-   {
+   public void testMixedToSameBundleWithRange2() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", "1");
       save(manifestA);
@@ -402,8 +388,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundleIsOptional()
-   {
+   public void testMixedToSameBundleIsOptional() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -430,8 +415,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundleIsOptional2()
-   {
+   public void testMixedToSameBundleIsOptional2() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -458,8 +442,7 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testMixedToSameBundleIsOptional3()
-   {
+   public void testMixedToSameBundleIsOptional3() {
       final BundleManifest manifestA = newManifest("a", "1");
       addPackageExport(manifestA, "package.a", null);
       save(manifestA);
@@ -486,14 +469,12 @@ public class DefaultRequirementsCollectorTest extends AbstractMavenizorTest
    }
 
 
-   private State createState(BundleManifest... manifests)
-   {
+   private State createState(BundleManifest... manifests) {
       final File bundlesDir = getWs().getRoot();
       return MavenizorTestHarness.newState(bundlesDir, manifests);
    }
 
-   private void save(BundleManifest manifest)
-   {
+   private void save(BundleManifest manifest) {
       final File bundlesDir = getWs().getRoot();
       MavenizorTestHarness.newBundle(bundlesDir, manifest);
    }

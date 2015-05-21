@@ -18,12 +18,9 @@ package org.sourcepit.mavenizor;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 
-public interface BundleFilter
-{
-   BundleFilter ACCEPT_ALL = new BundleFilter()
-   {
-      public boolean accept(BundleDescription bundle)
-      {
+public interface BundleFilter {
+   BundleFilter ACCEPT_ALL = new BundleFilter() {
+      public boolean accept(BundleDescription bundle) {
          return true;
       }
    };

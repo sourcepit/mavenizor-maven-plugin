@@ -33,10 +33,8 @@ import org.osgi.framework.Constants;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 
 @Named
-public class DefaultRequirementsCollector implements RequirementsCollector
-{
-   public Collection<Requirement> collectRequirements(BundleDescription bundle)
-   {
+public class DefaultRequirementsCollector implements RequirementsCollector {
+   public Collection<Requirement> collectRequirements(BundleDescription bundle) {
       final Map<BundleDescription, Requirement> requirements = new LinkedHashMap<BundleDescription, Requirement>();
       collectRequirementsByBundleRequirements(bundle, requirements);
       collectRequirementsByPackageImports(bundle, requirements);
@@ -45,12 +43,10 @@ public class DefaultRequirementsCollector implements RequirementsCollector
    }
 
    private static void collectRequirementsByBundleRequirements(BundleDescription bundle,
-      final Map<BundleDescription, Requirement> requirements)
-   {
+      final Map<BundleDescription, Requirement> requirements) {
       final Map<String, VersionRange> importVersioRange = new HashMap<String, VersionRange>();
       final Map<String, Boolean> importIsOptional = new HashMap<String, Boolean>();
-      for (BundleSpecification spec : bundle.getRequiredBundles())
-      {
+      for (BundleSpecification spec : bundle.getRequiredBundles()) {
          final String packageName = spec.getName();
          final VersionRange versionRange = VersionRange.parse(spec.getVersionRange().toString());
          importVersioRange.put(packageName, versionRange);
@@ -59,30 +55,25 @@ public class DefaultRequirementsCollector implements RequirementsCollector
          importIsOptional.put(packageName, optional);
       }
 
-      for (BundleDescription exporter : bundle.getResolvedRequires())
-      {
+      for (BundleDescription exporter : bundle.getResolvedRequires()) {
          putRequitement(bundle, requirements, importVersioRange, importIsOptional, exporter, exporter.getName());
       }
    }
 
    private static void collectRequirementsByPackageImports(BundleDescription bundle,
-      final Map<BundleDescription, Requirement> requirements)
-   {
+      final Map<BundleDescription, Requirement> requirements) {
       final Map<String, VersionRange> importVersioRange = new HashMap<String, VersionRange>();
       final Map<String, Boolean> importIsOptional = new HashMap<String, Boolean>();
-      for (ImportPackageSpecification spec : bundle.getImportPackages())
-      {
+      for (ImportPackageSpecification spec : bundle.getImportPackages()) {
          final String packageName = spec.getName();
          final VersionRange versionRange = VersionRange.parse(spec.getVersionRange().toString());
          importVersioRange.put(packageName, versionRange);
 
-         final Boolean optional = Boolean.valueOf(Constants.RESOLUTION_OPTIONAL.equals(spec
-            .getDirective(Constants.RESOLUTION_DIRECTIVE)));
+         final Boolean optional = Boolean.valueOf(Constants.RESOLUTION_OPTIONAL.equals(spec.getDirective(Constants.RESOLUTION_DIRECTIVE)));
          importIsOptional.put(packageName, optional);
       }
 
-      for (ExportPackageDescription resolvedImport : bundle.getResolvedImports())
-      {
+      for (ExportPackageDescription resolvedImport : bundle.getResolvedImports()) {
          final BundleDescription exporter = resolvedImport.getExporter();
          final String packageName = resolvedImport.getName();
          putRequitement(bundle, requirements, importVersioRange, importIsOptional, exporter, packageName);
@@ -91,41 +82,34 @@ public class DefaultRequirementsCollector implements RequirementsCollector
 
    private static void putRequitement(BundleDescription bundle, final Map<BundleDescription, Requirement> requirements,
       final Map<String, VersionRange> importVersioRange, final Map<String, Boolean> importIsOptional,
-      final BundleDescription exporter, final String packageName)
-   {
+      final BundleDescription exporter, final String packageName) {
       Requirement requirement = requirements.get(exporter);
-      if (requirement == null)
-      {
+      if (requirement == null) {
          requirement = new Requirement();
          requirement.setFrom(bundle);
          requirement.setTo(exporter);
          requirement.setVersionRange(VersionRange.INFINITE_RANGE);
 
          final Boolean optional = importIsOptional.get(packageName);
-         if (optional != null)
-         {
+         if (optional != null) {
             requirement.setOptional(optional.booleanValue());
          }
       }
 
       final Boolean optional = importIsOptional.get(packageName);
-      if (optional != null)
-      {
+      if (optional != null) {
          requirement.setOptional(requirement.isOptional() ? optional.booleanValue() : false);
       }
 
       if (requirement.getVersionRange() != null) // null means invalid
       {
          final VersionRange versionRange = importVersioRange.get(packageName);
-         if (versionRange != null)
-         {
-            try
-            {
+         if (versionRange != null) {
+            try {
                final VersionRange newRange = intersect(requirement.getVersionRange(), versionRange);
                requirement.setVersionRange(newRange);
             }
-            catch (IllegalArgumentException e)
-            {
+            catch (IllegalArgumentException e) {
                requirement.setVersionRange(null); // invalidate
             }
          }

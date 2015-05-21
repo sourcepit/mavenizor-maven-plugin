@@ -36,8 +36,7 @@ import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 /**
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
-public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizorMojo
-{
+public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizorMojo {
    @Inject
    private ArtifactBundleDistributor distributor;
 
@@ -54,42 +53,33 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
    protected boolean forceOverwrite;
 
    @Override
-   protected void processResult(Result result)
-   {
+   protected void processResult(Result result) {
       final DistributionHandler handler = getDistributionHandler();
       final Set<ArtifactBundle> scopeProject = new LinkedHashSet<ArtifactBundle>();
       final Set<ArtifactBundle> scopeDependency = new LinkedHashSet<ArtifactBundle>();
-      for (ArtifactBundle artifactBundle : result.getArtifactBundles())
-      {
-         if (isInProjectScope(result, artifactBundle))
-         {
+      for (ArtifactBundle artifactBundle : result.getArtifactBundles()) {
+         if (isInProjectScope(result, artifactBundle)) {
             scopeProject.add(artifactBundle);
          }
-         else
-         {
+         else {
             scopeDependency.add(artifactBundle);
          }
       }
       logger.info("Distributing project bundles...");
-      for (ArtifactBundle artifactBundle : scopeProject)
-      {
+      for (ArtifactBundle artifactBundle : scopeProject) {
          distributor.distribute(workingDir, artifactBundle, handler, true);
       }
       logger.info("Distributing target platform bundles...");
-      for (ArtifactBundle artifactBundle : scopeDependency)
-      {
+      for (ArtifactBundle artifactBundle : scopeDependency) {
          distributor.distribute(workingDir, artifactBundle, handler, forceOverwrite);
       }
    }
 
-   private boolean isInProjectScope(Result result, ArtifactBundle artifactBundle)
-   {
+   private boolean isInProjectScope(Result result, ArtifactBundle artifactBundle) {
       final Set<BundleDescription> bundles = result.getBundles(artifactBundle);
-      for (BundleDescription bundle : bundles)
-      {
+      for (BundleDescription bundle : bundles) {
          final File bundleLocation = BundleAdapterFactory.DEFAULT.adapt(bundle, File.class);
-         if (getBundleLocationsInBuildScope().contains(bundleLocation))
-         {
+         if (getBundleLocationsInBuildScope().contains(bundleLocation)) {
             return true;
          }
       }
@@ -98,20 +88,15 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
 
    protected abstract AbstractDistributionHandler getDistributionHandler();
 
-   protected ArtifactRepository getLocalRepository()
-   {
-      if (localRepositoryPath == null)
-      {
+   protected ArtifactRepository getLocalRepository() {
+      if (localRepositoryPath == null) {
          return localRepository;
       }
-      else
-      {
-         try
-         {
+      else {
+         try {
             return repositorySystem.createLocalRepository(localRepositoryPath);
          }
-         catch (InvalidRepositoryException e)
-         {
+         catch (InvalidRepositoryException e) {
             throw Exceptions.pipe(e);
          }
       }

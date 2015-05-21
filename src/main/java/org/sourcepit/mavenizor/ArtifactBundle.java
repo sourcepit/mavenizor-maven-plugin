@@ -25,24 +25,20 @@ import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 /**
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
-public class ArtifactBundle
-{
+public class ArtifactBundle {
    private Model pom;
 
    private final List<ConvertedArtifact> artifacts = new ArrayList<ConvertedArtifact>();
 
-   public Model getPom()
-   {
+   public Model getPom() {
       return pom;
    }
 
-   public void setPom(Model pom)
-   {
+   public void setPom(Model pom) {
       this.pom = pom;
    }
 
-   public List<ConvertedArtifact> getArtifacts()
-   {
+   public List<ConvertedArtifact> getArtifacts() {
       return artifacts;
    }
 }

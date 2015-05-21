@@ -70,15 +70,12 @@ import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 import org.sourcepit.mavenizor.state.OsgiStateBuilder;
 
-public abstract class AbstractMavenizorMojo extends AbstractMojo
-{
-   private final class MultiProperty extends HashSet<String>
-   {
+public abstract class AbstractMavenizorMojo extends AbstractMojo {
+   private final class MultiProperty extends HashSet<String> {
       private static final long serialVersionUID = 1L;
 
       @Override
-      public boolean equals(Object o)
-      {
+      public boolean equals(Object o) {
          return isEmpty() || contains(o);
       }
    }
@@ -143,44 +140,35 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
    @Inject
    private Map<String, TychoProject> projectTypes;
 
-   public final void execute() throws MojoExecutionException, MojoFailureException
-   {
-      try
-      {
+   public final void execute() throws MojoExecutionException, MojoFailureException {
+      try {
          doExecute();
       }
-      catch (PipedException e)
-      {
+      catch (PipedException e) {
          e.adaptAndThrow(MojoExecutionException.class);
          e.adaptAndThrow(MojoFailureException.class);
          throw new MojoExecutionException(e.getCause().getMessage(), e.getCause());
       }
    }
 
-   public void setTargetType(String targetType)
-   {
+   public void setTargetType(String targetType) {
       this.targetType = TargetType.valueOfLiteral(targetType);
    }
 
-   protected void doExecute() throws PipedException
-   {
+   protected void doExecute() throws PipedException {
       final PathMatcher projectMatcher = PathMatcher.parsePackagePatterns(projectFilter);
-      if (!projectMatcher.isMatch(project.getArtifactId()))
-      {
+      if (!projectMatcher.isMatch(project.getArtifactId())) {
          logger.info("Skipped by projectFilter: '" + projectFilter + "'");
          return;
       }
 
       Result result = (Result) project.getContextValue("mavenizor.result");
-      if (result == null)
-      {
+      if (result == null) {
          result = doMavenize();
          writePropertyTemplate(result);
 
-         for (BundleConverter.Result converterResult : result.getConverterResults())
-         {
-            if (!converterResult.getUnhandledEmbeddedLibraries().isEmpty())
-            {
+         for (BundleConverter.Result converterResult : result.getConverterResults()) {
+            if (!converterResult.getUnhandledEmbeddedLibraries().isEmpty()) {
                throw Exceptions.pipe(new MojoExecutionException(
                   "Unhandled embedded libraries detected. See build log for details."));
             }
@@ -190,27 +178,21 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       }
 
 
-      if (!dryRun)
-      {
+      if (!dryRun) {
          processResult(result);
       }
    }
 
-   private void writePropertyTemplate(Result result)
-   {
+   private void writePropertyTemplate(Result result) {
       final PropertiesMap template = new LinkedPropertiesMap();
 
-      for (BundleConverter.Result converterResult : result.getConverterResults())
-      {
+      for (BundleConverter.Result converterResult : result.getConverterResults()) {
          final BundleDescription bundle = converterResult.getBundle();
 
-         for (Path path : converterResult.getUnhandledEmbeddedLibraries())
-         {
+         for (Path path : converterResult.getUnhandledEmbeddedLibraries()) {
             final StringBuilder value = new StringBuilder();
-            for (ConvertionDirective directive : ConvertionDirective.values())
-            {
-               switch (directive)
-               {
+            for (ConvertionDirective directive : ConvertionDirective.values()) {
+               switch (directive) {
                   case REPLACE :
                      value.append("<groupId>:<artifactId>:<type>[:<classifier>]:<version>");
                      break;
@@ -232,8 +214,7 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
             template.put(key.toString(), value.toString());
          }
 
-         for (Path path : converterResult.getMissingEmbeddedLibraries())
-         {
+         for (Path path : converterResult.getMissingEmbeddedLibraries()) {
             final StringBuilder key = new StringBuilder();
             key.append(bundle.getSymbolicName());
             key.append("[_");
@@ -248,17 +229,14 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       template.store(new File(workingDir, "lib.properties"));
    }
 
-   private TargetType determineTargetType()
-   {
-      if (targetType == null)
-      {
+   private TargetType determineTargetType() {
+      if (targetType == null) {
          throw new IllegalArgumentException("Target type not specified");
       }
       return targetType;
    }
 
-   protected Result doMavenize()
-   {
+   protected Result doMavenize() {
       final OsgiStateBuilder stateBuilder = new OsgiStateBuilder(TychoProjectUtils.class.getClassLoader());
       addPlatformProperties(session, stateBuilder);
       addBundles(stateBuilder);
@@ -271,42 +249,33 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       return mavenizor.mavenize(request);
    }
 
-   private BundleFilter newInputFilter()
-   {
-      return new BundleFilter()
-      {
+   private BundleFilter newInputFilter() {
+      return new BundleFilter() {
          private final PathMatcher macher = newInputBundleSymbolicNameMatcher();
 
-         public boolean accept(BundleDescription bundle)
-         {
-            if (isEclipseSourceBundle(bundle))
-            {
+         public boolean accept(BundleDescription bundle) {
+            if (isEclipseSourceBundle(bundle)) {
                return true;
             }
-            if (macher == null || macher.isMatch(bundle.getSymbolicName()))
-            {
+            if (macher == null || macher.isMatch(bundle.getSymbolicName())) {
                final File location = BundleAdapterFactory.DEFAULT.adapt(bundle, File.class);
                return getBundleLocationsInBuildScope().contains(location);
             }
             return false;
          }
 
-         private boolean isEclipseSourceBundle(BundleDescription bundle)
-         {
+         private boolean isEclipseSourceBundle(BundleDescription bundle) {
             final BundleManifest manifest = BundleAdapterFactory.DEFAULT.adapt(bundle, BundleManifest.class);
             return manifest.getHeaderValue("Eclipse-SourceBundle") != null;
          }
       };
    }
 
-   private PathMatcher newInputBundleSymbolicNameMatcher()
-   {
+   private PathMatcher newInputBundleSymbolicNameMatcher() {
       final PathMatcher macher;
-      if (inputBundles != null && !inputBundles.isEmpty())
-      {
+      if (inputBundles != null && !inputBundles.isEmpty()) {
          StringBuilder sb = new StringBuilder();
-         for (String filterPattern : inputBundles)
-         {
+         for (String filterPattern : inputBundles) {
             sb.append(filterPattern);
             sb.append(',');
          }
@@ -314,39 +283,31 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
 
          macher = PathMatcher.parse(sb.toString(), ".", ",");
       }
-      else
-      {
+      else {
          macher = null;
       }
       return macher;
    }
 
-   private Set<File> determineBundleLocationsInBuildScope()
-   {
+   private Set<File> determineBundleLocationsInBuildScope() {
       final Set<File> inputBundleLocations = new HashSet<File>();
       final TychoProject tychoProject = projectTypes.get(project.getPackaging());
-      if (tychoProject instanceof EclipseFeatureProject)
-      {
+      if (tychoProject instanceof EclipseFeatureProject) {
          ArtifactDependencyWalker dependencyWalker = tychoProject.getDependencyWalker(project);
-         dependencyWalker.walk(new ArtifactDependencyVisitor()
-         {
+         dependencyWalker.walk(new ArtifactDependencyVisitor() {
             @Override
-            public void visitPlugin(PluginDescription plugin)
-            {
+            public void visitPlugin(PluginDescription plugin) {
                final File location;
 
                ReactorProject mavenProject = plugin.getMavenProject();
-               if (mavenProject != null)
-               {
+               if (mavenProject != null) {
                   location = mavenProject.getArtifact();
                }
-               else
-               {
+               else {
                   location = plugin.getLocation();
                }
 
-               if (location.isDirectory())
-               {
+               if (location.isDirectory()) {
                   throw new IllegalStateException("Bundle location is directory, expected jar: " + location);
                }
 
@@ -356,13 +317,11 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
             }
          });
       }
-      else if (tychoProject instanceof BundleProject)
-      {
+      else if (tychoProject instanceof BundleProject) {
          final ReactorProject mavenProject = DefaultReactorProject.adapt(project);
          final File location = mavenProject.getArtifact();
 
-         if (location.isDirectory())
-         {
+         if (location.isDirectory()) {
             throw new IllegalStateException("Bundle location is directory, expected jar: " + location);
          }
 
@@ -371,43 +330,35 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       return inputBundleLocations;
    }
 
-   private GAVStrategy newGAVStrategy()
-   {
+   private GAVStrategy newGAVStrategy() {
       final GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.setGroupIdPrefix(groupIdPrefix);
       request.setTrimQualifiers(trimQualifiers);
 
-      if (groupIdMappings != null)
-      {
-         for (String groupIdMapping : groupIdMappings)
-         {
+      if (groupIdMappings != null) {
+         for (String groupIdMapping : groupIdMappings) {
             final String[] split = groupIdMapping.split("=");
-            if (split.length != 2)
-            {
+            if (split.length != 2) {
                throw Exceptions.pipe(new MojoExecutionException("Invalid groupId mapping " + groupIdMapping));
             }
             request.getGroupIdMappings().put(split[0], split[1]);
          }
       }
 
-      if (group3Prefixes != null)
-      {
+      if (group3Prefixes != null) {
          request.getGroup3Prefixes().addAll(group3Prefixes);
       }
       return gavStrategyFactory.newGAVStrategy(request);
    }
 
-   protected Set<File> getBundleLocationsInBuildScope()
-   {
-      if (bundleLocationsInBuildScope == null)
-      {
+   protected Set<File> getBundleLocationsInBuildScope() {
+      if (bundleLocationsInBuildScope == null) {
          bundleLocationsInBuildScope = determineBundleLocationsInBuildScope();
       }
       return bundleLocationsInBuildScope;
    }
 
-   private State resolveState(final OsgiStateBuilder stateBuilder)
-   {
+   private State resolveState(final OsgiStateBuilder stateBuilder) {
       // TODO report unresolved requirements
       final State state = stateBuilder.getState();
       state.resolve(false);
@@ -415,42 +366,33 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
    }
 
    @SuppressWarnings({ "rawtypes", "unchecked" })
-   private void populateRequest(final Mavenizor.Request request)
-   {
+   private void populateRequest(final Mavenizor.Request request) {
       final PropertiesMap options = request.getOptions();
-      if (this.options != null)
-      {
+      if (this.options != null) {
          options.putAll((Map) this.options);
       }
 
-      if (libraryMappings != null)
-      {
-         for (String libraryMapping : libraryMappings)
-         {
+      if (libraryMappings != null) {
+         for (String libraryMapping : libraryMappings) {
             String[] split = libraryMapping.split("=");
-            if (split.length != 2)
-            {
+            if (split.length != 2) {
                throw Exceptions.pipe(new MojoExecutionException("Invalid library mapping " + libraryMapping));
             }
             options.put(split[0], split[1]);
          }
       }
 
-      if (requirementFilters != null)
-      {
-         for (RequirementFilter requirementFilter : requirementFilters)
-         {
+      if (requirementFilters != null) {
+         for (RequirementFilter requirementFilter : requirementFilters) {
             final String bundlePattern = requirementFilter.getBundle().trim();
 
             final String permitted = requirementFilter.getPermitted();
-            if (!isNullOrEmpty(permitted))
-            {
+            if (!isNullOrEmpty(permitted)) {
                options.put(bundlePattern + "@requirements.permitted", permitted.trim());
             }
 
             final String erase = requirementFilter.getErase();
-            if (!isNullOrEmpty(erase))
-            {
+            if (!isNullOrEmpty(erase)) {
                options.put(bundlePattern + "@requirements.erase", erase.trim());
             }
          }
@@ -460,37 +402,28 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       request.setTargetType(determineTargetType());
       request.setGAVStrategy(newGAVStrategy());
       request.setInputFilter(newInputFilter());
-      request.setSourceJarResolver(new SourceJarResolver()
-      {
-         public File resolveSource(BundleDescription bundle)
-         {
+      request.setSourceJarResolver(new SourceJarResolver() {
+         public File resolveSource(BundleDescription bundle) {
             final File bundleJar = BundleAdapterFactory.DEFAULT.adapt(bundle, File.class);
             final MavenProject project = getMavenProject(bundleJar);
-            if (project != null)
-            {
+            if (project != null) {
                return getSourceJar(project);
             }
             return null;
          }
 
-         private File getSourceJar(MavenProject project)
-         {
-            for (Artifact artifact : project.getAttachedArtifacts())
-            {
-               if ("java-source".equals(artifact.getType()) && "sources".equals(artifact.getClassifier()))
-               {
+         private File getSourceJar(MavenProject project) {
+            for (Artifact artifact : project.getAttachedArtifacts()) {
+               if ("java-source".equals(artifact.getType()) && "sources".equals(artifact.getClassifier())) {
                   return artifact.getFile();
                }
             }
             return null;
          }
 
-         private MavenProject getMavenProject(final File bundleJar)
-         {
-            for (MavenProject project : session.getProjects())
-            {
-               if (bundleJar.equals(project.getArtifact().getFile()))
-               {
+         private MavenProject getMavenProject(final File bundleJar) {
+            for (MavenProject project : session.getProjects()) {
+               if (bundleJar.equals(project.getArtifact().getFile())) {
                   return project;
                }
             }
@@ -501,27 +434,23 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
 
    protected abstract void processResult(Result result);
 
-   private void addPlatformProperties(final MavenSession session, final OsgiStateBuilder stateBuilder)
-   {
+   private void addPlatformProperties(final MavenSession session, final OsgiStateBuilder stateBuilder) {
       final MavenProject project = session.getCurrentProject();
 
       final TargetPlatformConfiguration configuration = TychoProjectUtils.getTargetPlatformConfiguration(project);
 
       final String eeName = configuration.getExecutionEnvironment();
-      if (eeName == null)
-      {
+      if (eeName == null) {
          stateBuilder.addSystemExecutionEnvironmentProperties();
       }
-      else
-      {
+      else {
          stateBuilder.addExecutionEnvironmentProperties(eeName);
       }
 
       final Set<String> os = new MultiProperty();
       final Set<String> ws = new MultiProperty();
       final Set<String> arch = new MultiProperty();
-      for (TargetEnvironment targetEnvironment : configuration.getEnvironments())
-      {
+      for (TargetEnvironment targetEnvironment : configuration.getEnvironments()) {
          os.add(targetEnvironment.getOs());
          ws.add(targetEnvironment.getWs());
          arch.add(targetEnvironment.getArch());
@@ -534,12 +463,9 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo
       stateBuilder.addPlatformProperties(targetMap);
    }
 
-   private void addBundles(final OsgiStateBuilder stateBuilder)
-   {
-      bundleResolver.resolve(session, new Handler()
-      {
-         public void resolved(File bundleLocation)
-         {
+   private void addBundles(final OsgiStateBuilder stateBuilder) {
+      bundleResolver.resolve(session, new Handler() {
+         public void resolved(File bundleLocation) {
             stateBuilder.addBundle(bundleLocation);
          }
       });

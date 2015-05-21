@@ -24,42 +24,35 @@ import org.junit.Rule;
 import org.sourcepit.common.testing.Environment;
 import org.sourcepit.common.testing.Workspace;
 
-public abstract class AbstractMavenizorTest extends InjectedTest
-{
+public abstract class AbstractMavenizorTest extends InjectedTest {
    private final Environment env = newEnvironment();
 
    @Rule
    public Workspace ws = newWorkspace();
 
-   protected Workspace newWorkspace()
-   {
+   protected Workspace newWorkspace() {
       return new Workspace(new File(env.getBuildDir(), "ws"), false);
    }
 
-   protected Environment newEnvironment()
-   {
+   protected Environment newEnvironment() {
       return Environment.get("env-tests.properties");
    }
 
-   public Environment getEnvironment()
-   {
+   public Environment getEnvironment() {
       return env;
    }
 
-   protected Workspace getWs()
-   {
+   protected Workspace getWs() {
       return ws;
    }
 
-   protected File getResource(String path) throws IOException
-   {
+   protected File getResource(String path) throws IOException {
       File resources = getResourcesDir();
       File resource = new File(resources, path).getCanonicalFile();
       return ws.importFileOrDir(resource);
    }
 
-   protected File getResourcesDir()
-   {
+   protected File getResourcesDir() {
       return getEnvironment().getResourcesDir();
    }
 }

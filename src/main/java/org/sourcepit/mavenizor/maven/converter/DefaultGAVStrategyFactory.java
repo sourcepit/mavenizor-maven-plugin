@@ -23,13 +23,10 @@ import java.util.List;
 import javax.inject.Named;
 
 @Named
-public class DefaultGAVStrategyFactory implements GAVStrategyFactory
-{
-   public GAVStrategy newGAVStrategy(Request request)
-   {
+public class DefaultGAVStrategyFactory implements GAVStrategyFactory {
+   public GAVStrategy newGAVStrategy(Request request) {
       final List<SnapshotRule> snapshotRules = new ArrayList<SnapshotRule>();
-      if (request.isUseDefaultSnapshotRules())
-      {
+      if (request.isUseDefaultSnapshotRules()) {
          Collections.addAll(snapshotRules, GAVStrategyFactory.DEFAULT_SNAPSHOT_RULES);
       }
       snapshotRules.addAll(request.getAdditionalSnapshotRules());

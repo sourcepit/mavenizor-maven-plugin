@@ -51,8 +51,7 @@ import org.sourcepit.mavenizor.maven.converter.BundleConverter.Request;
 import org.sourcepit.mavenizor.maven.converter.BundleConverter.Result;
 import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 
-public class DefaultBundleConverterTest extends AbstractMavenizorTest
-{
+public class DefaultBundleConverterTest extends AbstractMavenizorTest {
    @Inject
    private DefaultBundleConverter converter;
 
@@ -67,8 +66,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
 
    @Before
    @Override
-   public void setUp() throws Exception
-   {
+   public void setUp() throws Exception {
       super.setUp();
       bundlesDir = new File(getWs().getRoot(), "bundles");
       workingDir = new File(getWs().getRoot(), "work");
@@ -76,8 +74,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testIgnoreBundle()
-   {
+   public void testIgnoreBundle() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
       addEmbeddedLibrary(bundleDir, mf, ".");
@@ -103,8 +100,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
       assertThat(result.getConvertedArtifacts().size(), Is.is(0));
    }
 
-   private Request newRequest(BundleDescription bundle, PropertiesMap options)
-   {
+   private Request newRequest(BundleDescription bundle, PropertiesMap options) {
       Request request = new Request();
       request.setBundle(bundle);
       request.setTargetType(TargetType.JAVA);
@@ -115,8 +111,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testIgnoreLibrary()
-   {
+   public void testIgnoreLibrary() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
       addEmbeddedLibrary(bundleDir, mf, ".");
@@ -144,8 +139,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testOmitMainBundle()
-   {
+   public void testOmitMainBundle() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
       addEmbeddedLibrary(bundleDir, mf, ".");
@@ -176,8 +170,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testOmitMainBundleWithoutEmbeddedLibrary()
-   {
+   public void testOmitMainBundleWithoutEmbeddedLibrary() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       newBundle(bundlesDir, mf);
 
@@ -200,8 +193,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testReplaceBundle()
-   {
+   public void testReplaceBundle() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
       addEmbeddedLibrary(bundleDir, mf, ".");
@@ -238,8 +230,7 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testReplaceLibrary()
-   {
+   public void testReplaceLibrary() {
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
       addEmbeddedLibrary(bundleDir, mf, ".");
@@ -275,10 +266,13 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testAutoDetectLibrary()
-   {
-      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testAutoDetectLibrary() {
+      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -307,13 +301,20 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testAutoDetectLibraryAmbiguous()
-   {
-      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testAutoDetectLibraryAmbiguous() {
+      final ProjectKey expectedLib = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
-      final ProjectKey expectedLib2 = new ArtifactKeyBuilder().setGroupId("foo").setArtifactId("bar").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+      final ProjectKey expectedLib2 = new ArtifactKeyBuilder().setGroupId("foo")
+         .setArtifactId("bar")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, mf);
@@ -335,23 +336,25 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testAutoDetectBundle() throws IOException
-   {
-      for (int i = 0; i < 2; i++)
-      {
+   public void testAutoDetectBundle() throws IOException {
+      for (int i = 0; i < 2; i++) {
          final boolean jar = i == 1;
 
          BundleManifest mf = newManifest("foo", "1.0.0.qualifier");
          File bundleDir = newBundle(bundlesDir, mf);
          addEmbeddedLibrary(bundleDir, mf, "embedded.jar");
 
-         final ProjectKey expectedGAV = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst")
-            .setType("jar").setType("jar").setVersion("3").toArtifactKey().getProjectKey();
+         final ProjectKey expectedGAV = new ArtifactKeyBuilder().setGroupId("hans")
+            .setArtifactId("wurst")
+            .setType("jar")
+            .setType("jar")
+            .setVersion("3")
+            .toArtifactKey()
+            .getProjectKey();
 
          addMavenMetaData(bundleDir, expectedGAV);
 
-         if (jar)
-         {
+         if (jar) {
             jar(bundleDir);
             deleteFileOrDirectory(bundleDir);
          }
@@ -360,12 +363,10 @@ public class DefaultBundleConverterTest extends AbstractMavenizorTest
 
          BundleDescription bundle = getBundle(state, "foo");
 
-         if (jar)
-         {
+         if (jar) {
             assertTrue(BundleAdapterFactory.DEFAULT.adapt(bundle, File.class).isFile());
          }
-         else
-         {
+         else {
             assertTrue(BundleAdapterFactory.DEFAULT.adapt(bundle, File.class).isDirectory());
          }
 

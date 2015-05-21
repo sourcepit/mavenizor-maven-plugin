@@ -44,8 +44,7 @@ import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.props.PropertiesUtils;
 
 
-public class OsgiStateBuilder
-{
+public class OsgiStateBuilder {
    public final static String OSGI_WS = "osgi.ws";
    public final static String OSGI_OS = "osgi.os";
    public final static String OSGI_ARCH = "osgi.arch";
@@ -61,39 +60,32 @@ public class OsgiStateBuilder
 
    private long currentId;
 
-   public OsgiStateBuilder()
-   {
+   public OsgiStateBuilder() {
       this(Thread.currentThread().getContextClassLoader());
    }
 
-   public OsgiStateBuilder(ClassLoader classLoader)
-   {
+   public OsgiStateBuilder(ClassLoader classLoader) {
       this.classLoader = classLoader;
       stateFactory = StateObjectFactory.defaultFactory;
       state = stateFactory.createState(true);
    }
 
-   public State getState()
-   {
+   public State getState() {
       return state;
    }
 
-   public void addBundle(File location)
-   {
+   public void addBundle(File location) {
       state.addBundle(createBundle(location));
    }
 
-   private BundleDescription createBundle(File location)
-   {
+   private BundleDescription createBundle(File location) {
       final BundleManifest manifest = readManifest(location);
       final Dictionary<String, String> headers = toDictionary(manifest);
       final BundleDescription bundle;
-      try
-      {
+      try {
          bundle = stateFactory.createBundleDescription(state, headers, location.getAbsolutePath(), currentId++);
       }
-      catch (BundleException e)
-      {
+      catch (BundleException e) {
          throw Exceptions.pipe(e);
       }
       Adapters.addAdapter(bundle, location);
@@ -101,24 +93,19 @@ public class OsgiStateBuilder
       return bundle;
    }
 
-   private static Dictionary<String, String> toDictionary(final BundleManifest manifest)
-   {
+   private static Dictionary<String, String> toDictionary(final BundleManifest manifest) {
       final Dictionary<String, String> headers = new Hashtable<String, String>(manifest.getHeaders().size());
-      for (Entry<String, String> header : manifest.getHeaders())
-      {
+      for (Entry<String, String> header : manifest.getHeaders()) {
          headers.put(header.getKey(), header.getValue());
       }
       return headers;
    }
 
-   private static BundleManifest readManifest(File location)
-   {
+   private static BundleManifest readManifest(File location) {
       final Resource resource = new BundleManifestResourceImpl();
-      new IOOperation<InputStream>(osgiIn(location, "META-INF/MANIFEST.MF"))
-      {
+      new IOOperation<InputStream>(osgiIn(location, "META-INF/MANIFEST.MF")) {
          @Override
-         protected void run(InputStream inputStream) throws IOException
-         {
+         protected void run(InputStream inputStream) throws IOException {
             resource.load(inputStream, null);
          }
       }.run();
@@ -126,60 +113,47 @@ public class OsgiStateBuilder
    }
 
    @SuppressWarnings({ "rawtypes", "unchecked" })
-   public void addPlatformProperties(Map properties)
-   {
+   public void addPlatformProperties(Map properties) {
       final Dictionary<Object, Object> platformProperties = getPlatformProperties();
-      for (Entry entry : (Set<Entry>) properties.entrySet())
-      {
+      for (Entry entry : (Set<Entry>) properties.entrySet()) {
          platformProperties.put(entry.getKey(), entry.getValue());
       }
    }
 
-   public void addExecutionEnvironmentProperties(String name)
-   {
-      new IOOperation<InputStream>(cpIn(classLoader, name + ".profile"))
-      {
+   public void addExecutionEnvironmentProperties(String name) {
+      new IOOperation<InputStream>(cpIn(classLoader, name + ".profile")) {
          @Override
-         protected void run(InputStream inputStream) throws IOException
-         {
+         protected void run(InputStream inputStream) throws IOException {
             PropertiesUtils.load(inputStream, getPlatformProperties());
          }
       }.run();
    }
 
-   public void addSystemExecutionEnvironmentProperties()
-   {
+   public void addSystemExecutionEnvironmentProperties() {
       final String name = determineProfileName(System.getProperties(), "OSGi/Minimum-1.1");
       addExecutionEnvironmentProperties(name);
    }
 
-   private static String determineProfileName(Properties properties, String defaultName)
-   {
+   private static String determineProfileName(Properties properties, String defaultName) {
       String javaSpecVersion = properties.getProperty("java.specification.version");
-      if (javaSpecVersion != null)
-      {
+      if (javaSpecVersion != null) {
          final StringTokenizer st = new StringTokenizer(javaSpecVersion, " _-");
          javaSpecVersion = st.nextToken();
          String javaSpecName = properties.getProperty("java.specification.name");
-         if ("J2ME Foundation Specification".equals(javaSpecName))
-         {
+         if ("J2ME Foundation Specification".equals(javaSpecName)) {
             return "CDC-" + javaSpecVersion + "_Foundation-" + javaSpecVersion;
          }
-         else
-         {
+         else {
             // look for JavaSE if 1.6 or greater; otherwise look for J2SE
             Version v16 = new Version("1.6"); //$NON-NLS-1$
             String javaEdition = J2SE;
-            try
-            {
+            try {
                Version javaVersion = new Version(javaSpecVersion);
-               if (v16.compareTo(javaVersion) <= 0)
-               {
+               if (v16.compareTo(javaVersion) <= 0) {
                   javaEdition = JAVASE;
                }
             }
-            catch (IllegalArgumentException e)
-            {
+            catch (IllegalArgumentException e) {
                // do nothing
             }
             return javaEdition + javaSpecVersion;
@@ -189,8 +163,7 @@ public class OsgiStateBuilder
    }
 
    @SuppressWarnings("unchecked")
-   private Dictionary<Object, Object> getPlatformProperties()
-   {
+   private Dictionary<Object, Object> getPlatformProperties() {
       return state.getPlatformProperties()[0];
    }
 }

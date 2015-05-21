@@ -37,14 +37,12 @@ import org.sourcepit.common.utils.props.PropertiesMap;
 import org.sourcepit.mavenizor.OptionsHelper.CompareMode;
 import org.sourcepit.mavenizor.state.Requirement;
 
-public class OptionsHelperTest extends InjectedTest
-{
+public class OptionsHelperTest extends InjectedTest {
    @Inject
    private OptionsHelper optionsHelper;
 
    @Test
-   public void testGetBundleOptions()
-   {
+   public void testGetBundleOptions() {
       PropertiesMap options = new LinkedPropertiesMap();
       options.put("@foo", "1");
       options.put("org.sourcepit.bundle_1.0.0.qualifier@foo", "2");
@@ -77,8 +75,7 @@ public class OptionsHelperTest extends InjectedTest
    }
 
    @Test
-   public void testGetBooleanValue()
-   {
+   public void testGetBooleanValue() {
       BundleDescription bundle = mock(BundleDescription.class);
       when(bundle.getSymbolicName()).thenReturn("org.sourcepit.bundle");
       when(bundle.getVersion()).thenReturn(new Version("1.0.0.qualifier"));
@@ -95,8 +92,7 @@ public class OptionsHelperTest extends InjectedTest
    }
 
    @Test
-   public void testIsMatch()
-   {
+   public void testIsMatch() {
       PropertiesMap options = new LinkedPropertiesMap();
       options.put("@foo", "org.**");
       options.put("org.sourcepit.bundle_1.0.0.qualifier@foo", "org.**");

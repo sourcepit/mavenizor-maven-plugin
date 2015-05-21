@@ -20,8 +20,7 @@ import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.utils.path.Path;
 
-public interface GAVStrategy
-{
+public interface GAVStrategy {
    String deriveGroupId(BundleDescription bundle);
 
    String deriveArtifactId(BundleDescription bundle);

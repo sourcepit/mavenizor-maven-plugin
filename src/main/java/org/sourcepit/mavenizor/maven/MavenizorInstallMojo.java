@@ -29,14 +29,12 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
 @Mojo(name = "install-bundles", defaultPhase = LifecyclePhase.INSTALL, requiresDependencyResolution = ResolutionScope.TEST)
-public class MavenizorInstallMojo extends AbstractDistributingMavenizorMojo
-{
+public class MavenizorInstallMojo extends AbstractDistributingMavenizorMojo {
    @Inject
    private ArtifactInstaller installer;
 
    @Override
-   protected AbstractDistributionHandler getDistributionHandler()
-   {
+   protected AbstractDistributionHandler getDistributionHandler() {
       final ArtifactRepository localRepository = getLocalRepository();
       return new InstallationHandler(logger, installer, localRepository);
    }

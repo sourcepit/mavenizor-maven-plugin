@@ -35,30 +35,23 @@ import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 
-public interface Mavenizor
-{
-   public enum TargetType
-   {
+public interface Mavenizor {
+   public enum TargetType {
       OSGI, JAVA;
 
       private final String literal;
 
-      private TargetType()
-      {
+      private TargetType() {
          this.literal = name().toLowerCase();
       }
 
-      public final String literal()
-      {
+      public final String literal() {
          return literal;
       }
 
-      public static TargetType valueOfLiteral(String literal)
-      {
-         for (TargetType mode : values())
-         {
-            if (mode.literal().equals(literal))
-            {
+      public static TargetType valueOfLiteral(String literal) {
+         for (TargetType mode : values()) {
+            if (mode.literal().equals(literal)) {
                return mode;
             }
          }
@@ -66,8 +59,7 @@ public interface Mavenizor
       }
    }
 
-   class Request
-   {
+   class Request {
       private File workingDir;
       private TargetType targetType;
       private State state;
@@ -76,126 +68,101 @@ public interface Mavenizor
       private PropertiesMap options = new LinkedPropertiesMap();
       private SourceJarResolver sourceJarResolver;
 
-      public File getWorkingDirectory()
-      {
+      public File getWorkingDirectory() {
          return workingDir;
       }
 
-      public void setWorkingDirectory(File workingDir)
-      {
+      public void setWorkingDirectory(File workingDir) {
          this.workingDir = workingDir;
       }
 
-      public TargetType getTargetType()
-      {
+      public TargetType getTargetType() {
          return targetType;
       }
 
-      public void setTargetType(TargetType targetType)
-      {
+      public void setTargetType(TargetType targetType) {
          this.targetType = targetType;
       }
 
-      public State getState()
-      {
+      public State getState() {
          return state;
       }
 
-      public void setState(State state)
-      {
+      public void setState(State state) {
          this.state = state;
       }
 
-      public BundleFilter getInputFilter()
-      {
+      public BundleFilter getInputFilter() {
          return inputFilter;
       }
 
-      public void setInputFilter(BundleFilter inputFilter)
-      {
+      public void setInputFilter(BundleFilter inputFilter) {
          this.inputFilter = inputFilter;
       }
 
-      public GAVStrategy getGAVStrategy()
-      {
+      public GAVStrategy getGAVStrategy() {
          return gavStrategy;
       }
 
-      public void setGAVStrategy(GAVStrategy gavStrategy)
-      {
+      public void setGAVStrategy(GAVStrategy gavStrategy) {
          this.gavStrategy = gavStrategy;
       }
 
-      public PropertiesMap getOptions()
-      {
+      public PropertiesMap getOptions() {
          return options;
       }
 
-      public void setSourceJarResolver(SourceJarResolver sourceJarResolver)
-      {
+      public void setSourceJarResolver(SourceJarResolver sourceJarResolver) {
          this.sourceJarResolver = sourceJarResolver;
       }
 
-      public SourceJarResolver getSourceJarResolver()
-      {
+      public SourceJarResolver getSourceJarResolver() {
          return sourceJarResolver;
       }
    }
 
-   class Result
-   {
+   class Result {
       private final List<BundleDescription> inputBundles = new ArrayList<BundleDescription>();
       private final List<BundleDescription> sourceBundles = new ArrayList<BundleDescription>();
       private final Map<BundleDescription, BundleConverter.Result> bundleToconverterResultMap = new LinkedHashMap<BundleDescription, BundleConverter.Result>();
       private final Map<String, ArtifactBundle> gavToArtifactBundleMap = new LinkedHashMap<String, ArtifactBundle>();
 
-      public List<BundleDescription> getInputBundles()
-      {
+      public List<BundleDescription> getInputBundles() {
          return inputBundles;
       }
 
-      public List<BundleDescription> getSourceBundles()
-      {
+      public List<BundleDescription> getSourceBundles() {
          return sourceBundles;
       }
 
-      public BundleConverter.Result getConverterResult(BundleDescription bundle)
-      {
+      public BundleConverter.Result getConverterResult(BundleDescription bundle) {
          return bundleToconverterResultMap.get(bundle);
       }
 
-      public List<BundleConverter.Result> getConverterResults()
-      {
+      public List<BundleConverter.Result> getConverterResults() {
          return new ArrayList<BundleConverter.Result>(bundleToconverterResultMap.values());
       }
 
-      public List<ArtifactBundle> getArtifactBundles()
-      {
+      public List<ArtifactBundle> getArtifactBundles() {
          return new ArrayList<ArtifactBundle>(gavToArtifactBundleMap.values());
       }
 
-      public List<ConvertedArtifact> getConvertedArtifacts(BundleDescription bundle)
-      {
+      public List<ConvertedArtifact> getConvertedArtifacts(BundleDescription bundle) {
          final List<ConvertedArtifact> convertedArtifacts = new ArrayList<ConvertedArtifact>();
          final BundleConverter.Result result = bundleToconverterResultMap.get(bundle);
-         if (result != null)
-         {
+         if (result != null) {
             convertedArtifacts.addAll(result.getConvertedArtifacts());
          }
          return convertedArtifacts;
       }
 
-      public List<ArtifactBundle> getArtifactBundles(BundleDescription bundle)
-      {
+      public List<ArtifactBundle> getArtifactBundles(BundleDescription bundle) {
          final List<ArtifactBundle> artifactBundles = new ArrayList<ArtifactBundle>();
          final Collection<ConvertedArtifact> artifacts = getConvertedArtifacts(bundle);
-         if (artifacts != null && !artifacts.isEmpty())
-         {
-            for (ConvertedArtifact artifact : artifacts)
-            {
+         if (artifacts != null && !artifacts.isEmpty()) {
+            for (ConvertedArtifact artifact : artifacts) {
                final ArtifactBundle artifactBundle = getArtifactBundle(artifact);
-               if (artifactBundle == null || artifactBundles.contains(artifactBundle))
-               {
+               if (artifactBundle == null || artifactBundles.contains(artifactBundle)) {
                   throw new IllegalStateException();
                }
                artifactBundles.add(artifactBundle);
@@ -204,17 +171,13 @@ public interface Mavenizor
          return artifactBundles;
       }
 
-      public Set<BundleDescription> getBundles(ArtifactBundle artifactBundle)
-      {
+      public Set<BundleDescription> getBundles(ArtifactBundle artifactBundle) {
          final Set<BundleDescription> bundles = new HashSet<BundleDescription>();
-         for (Entry<BundleDescription, BundleConverter.Result> entry : bundleToconverterResultMap.entrySet())
-         {
+         for (Entry<BundleDescription, BundleConverter.Result> entry : bundleToconverterResultMap.entrySet()) {
             final BundleDescription bundle = entry.getKey();
             final BundleConverter.Result converterResult = entry.getValue();
-            for (ConvertedArtifact artifact : converterResult.getConvertedArtifacts())
-            {
-               if (artifactBundle.equals(getArtifactBundle(artifact)))
-               {
+            for (ConvertedArtifact artifact : converterResult.getConvertedArtifacts()) {
+               if (artifactBundle.equals(getArtifactBundle(artifact))) {
                   bundles.add(bundle);
                   break;
                }
@@ -223,39 +186,32 @@ public interface Mavenizor
          return bundles;
       }
 
-      public ArtifactBundle getArtifactBundle(ConvertedArtifact artifact)
-      {
+      public ArtifactBundle getArtifactBundle(ConvertedArtifact artifact) {
          return getArtifactBundle(artifact, false);
       }
 
-      private ArtifactBundle getArtifactBundle(ConvertedArtifact artifact, boolean createOnDemand)
-      {
+      private ArtifactBundle getArtifactBundle(ConvertedArtifact artifact, boolean createOnDemand) {
          final String gav = createGAV(artifact);
          ArtifactBundle artifactBundle = gavToArtifactBundleMap.get(gav);
-         if (artifactBundle == null && createOnDemand)
-         {
+         if (artifactBundle == null && createOnDemand) {
             artifactBundle = new ArtifactBundle();
             gavToArtifactBundleMap.put(gav, artifactBundle);
          }
          return artifactBundle;
       }
 
-      public static void addConverterResult(Result result, BundleConverter.Result converterResult)
-      {
+      public static void addConverterResult(Result result, BundleConverter.Result converterResult) {
          result.bundleToconverterResultMap.put(converterResult.getBundle(), converterResult);
-         for (ConvertedArtifact convertedArtifact : converterResult.getConvertedArtifacts())
-         {
+         for (ConvertedArtifact convertedArtifact : converterResult.getConvertedArtifacts()) {
             result.getArtifactBundle(convertedArtifact, true).getArtifacts().add(convertedArtifact);
          }
       }
 
-      private String createGAV(ConvertedArtifact artifact)
-      {
+      private String createGAV(ConvertedArtifact artifact) {
          return createGAV(artifact.getMavenArtifact());
       }
 
-      private String createGAV(MavenArtifact artifact)
-      {
+      private String createGAV(MavenArtifact artifact) {
          final StringBuilder sb = new StringBuilder();
          sb.append(artifact.getGroupId());
          sb.append(':');

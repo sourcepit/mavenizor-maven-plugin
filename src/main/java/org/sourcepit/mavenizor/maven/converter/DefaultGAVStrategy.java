@@ -27,10 +27,9 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.sourcepit.common.constraints.NotNull;
-
 import org.codehaus.plexus.interpolation.AbstractValueSource;
 import org.eclipse.osgi.service.resolver.BundleDescription;
+import org.sourcepit.common.constraints.NotNull;
 import org.sourcepit.common.manifest.osgi.Version;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.utils.path.Path;
@@ -41,8 +40,7 @@ import org.sourcepit.common.utils.props.PropertiesSource;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 import org.sourcepit.tools.shared.resources.harness.StringInterpolator;
 
-public class DefaultGAVStrategy implements GAVStrategy
-{
+public class DefaultGAVStrategy implements GAVStrategy {
    private static final Pattern GROUP_2_PATTERN = Pattern.compile("^(\\w*\\.\\w*)(\\..*)?$");
    private static final Pattern GROUP_3_PATTERN = Pattern.compile("^(\\w*\\.\\w*\\.\\w*)(\\..*)?$");
    private static final String GROUP_3[] = { "net.sf", "org.apache", "org.codehaus", "org.tigris", "org.sourcepit" };
@@ -54,8 +52,7 @@ public class DefaultGAVStrategy implements GAVStrategy
    private final Map<String, String> groupIdMappings;
 
    public DefaultGAVStrategy(@NotNull List<SnapshotRule> snapshotRules, String groupIdPrefix, boolean trimQualifiers,
-      Collection<String> group3Prefixes, Map<String, String> groupIdMappings)
-   {
+      Collection<String> group3Prefixes, Map<String, String> groupIdMappings) {
       this.snapshotRules = snapshotRules;
       this.groupIdPrefix = groupIdPrefix == null ? null : groupIdPrefix.endsWith(".") ? groupIdPrefix : groupIdPrefix
          + ".";
@@ -64,35 +61,28 @@ public class DefaultGAVStrategy implements GAVStrategy
 
       this.group3Prefixes = new HashSet<String>();
       Collections.addAll(this.group3Prefixes, GROUP_3);
-      if (group3Prefixes != null)
-      {
+      if (group3Prefixes != null) {
          this.group3Prefixes.addAll(group3Prefixes);
       }
    }
 
-   public String deriveGroupId(@NotNull BundleDescription bundle)
-   {
+   public String deriveGroupId(@NotNull BundleDescription bundle) {
       final String symbolicName = bundle.getSymbolicName();
 
       String groupId = applyGroupIdMapping(symbolicName);
-      if (groupId == null)
-      {
+      if (groupId == null) {
          groupId = deriveGroupId(symbolicName);
       }
-      if (groupIdPrefix != null)
-      {
+      if (groupIdPrefix != null) {
          groupId = groupIdPrefix + groupId;
       }
       return groupId;
    }
 
-   private String applyGroupIdMapping(final String symbolicName)
-   {
-      for (Entry<String, String> entry : groupIdMappings.entrySet())
-      {
+   private String applyGroupIdMapping(final String symbolicName) {
+      for (Entry<String, String> entry : groupIdMappings.entrySet()) {
          final PathMatcher matcher = PathMatcher.parsePackagePatterns(entry.getKey());
-         if (matcher.isMatch(symbolicName))
-         {
+         if (matcher.isMatch(symbolicName)) {
             PropertiesMap props = new LinkedPropertiesMap(1);
             props.put("bundle.groupId", deriveGroupId(symbolicName));
             props.put("bundle.symbolicName", symbolicName);
@@ -103,70 +93,57 @@ public class DefaultGAVStrategy implements GAVStrategy
       return null;
    }
 
-   private static String interpolate(final PropertiesSource moduleProperties, String value)
-   {
+   private static String interpolate(final PropertiesSource moduleProperties, String value) {
       StringInterpolator s = new StringInterpolator();
       s.setEscapeString("\\");
-      s.getValueSources().add(new AbstractValueSource(false)
-      {
-         public Object getValue(String expression)
-         {
+      s.getValueSources().add(new AbstractValueSource(false) {
+         public Object getValue(String expression) {
             return moduleProperties.get(expression);
          }
       });
       return s.interpolate(value);
    }
 
-   private String deriveGroupId(@NotNull String symbolicName)
-   {
+   private String deriveGroupId(@NotNull String symbolicName) {
       checkArgument(symbolicName.length() > 0);
       Matcher m = null;
 
-      for (String group3Prefix : group3Prefixes)
-      {
-         if (symbolicName.startsWith(group3Prefix))
-         {
+      for (String group3Prefix : group3Prefixes) {
+         if (symbolicName.startsWith(group3Prefix)) {
             m = GROUP_3_PATTERN.matcher(symbolicName);
          }
       }
 
-      if (m == null)
-      {
+      if (m == null) {
          m = GROUP_2_PATTERN.matcher(symbolicName);
       }
 
-      if (m.matches())
-      {
+      if (m.matches()) {
          return m.group(1);
       }
 
       return symbolicName;
    }
 
-   public String deriveArtifactId(@NotNull BundleDescription bundle)
-   {
+   public String deriveArtifactId(@NotNull BundleDescription bundle) {
       return deriveArtifactId(bundle.getSymbolicName());
    }
 
-   private String deriveArtifactId(@NotNull String symbolicName)
-   {
+   private String deriveArtifactId(@NotNull String symbolicName) {
       checkArgument(symbolicName.length() > 0);
       return symbolicName;
    }
 
-   public String deriveArtifactId(@NotNull BundleDescription bundle, @NotNull Path libraryEntry)
-   {
+   public String deriveArtifactId(@NotNull BundleDescription bundle, @NotNull Path libraryEntry) {
       return libraryEntry.getFileName();
    }
 
-   public String deriveMavenVersion(@NotNull BundleDescription bundle)
-   {
+   public String deriveMavenVersion(@NotNull BundleDescription bundle) {
       final Version version = Version.parse(bundle.getVersion().toString());
       return deriveMavenVersion(bundle, version);
    }
 
-   private String deriveMavenVersion(BundleDescription bundle, final Version version)
-   {
+   private String deriveMavenVersion(BundleDescription bundle, final Version version) {
       final StringBuilder sb = new StringBuilder();
       sb.append(version.getMajor());
       sb.append('.');
@@ -175,8 +152,7 @@ public class DefaultGAVStrategy implements GAVStrategy
       sb.append(version.getMicro());
 
       final String qualifier = deriveMavenVersionQualifier(bundle, version);
-      if (qualifier != null)
-      {
+      if (qualifier != null) {
          sb.append('-');
          sb.append(qualifier);
       }
@@ -184,26 +160,21 @@ public class DefaultGAVStrategy implements GAVStrategy
       return sb.toString();
    }
 
-   private String deriveMavenVersionQualifier(BundleDescription bundle, Version version)
-   {
-      if (isSnapshotVersion(bundle, version))
-      {
+   private String deriveMavenVersionQualifier(BundleDescription bundle, Version version) {
+      if (isSnapshotVersion(bundle, version)) {
          return "SNAPSHOT";
       }
-      if (!trimQualifiers && version.getQualifier().length() > 0)
-      {
+      if (!trimQualifiers && version.getQualifier().length() > 0) {
          return version.getQualifier();
       }
       return null;
    }
 
-   public String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull VersionRange versionRange)
-   {
+   public String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull VersionRange versionRange) {
       final Version lowVersion = versionRange.getLowVersion();
       final Version highVersion = versionRange.getHighVersion();
 
-      if (highVersion == null && lowVersion != null)
-      {
+      if (highVersion == null && lowVersion != null) {
          return deriveMavenVersionRange(bundle, lowVersion);
       }
 
@@ -216,18 +187,15 @@ public class DefaultGAVStrategy implements GAVStrategy
       return sb.toString();
    }
 
-   private String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull Version recommendedVersion)
-   {
+   private String deriveMavenVersionRange(@NotNull BundleDescription bundle, @NotNull Version recommendedVersion) {
       final String qualifier = deriveMavenVersionQualifier(bundle, recommendedVersion);
       final StringBuilder sb = new StringBuilder();
-      if (qualifier == null)
-      {
+      if (qualifier == null) {
          sb.append('[');
          appendToRange(sb, recommendedVersion);
          sb.append(",)");
       }
-      else
-      {
+      else {
          sb.append(recommendedVersion.getMajor());
          sb.append('.');
          sb.append(recommendedVersion.getMinor());
@@ -240,29 +208,23 @@ public class DefaultGAVStrategy implements GAVStrategy
 
    }
 
-   private void appendToRange(final StringBuilder sb, final Version version)
-   {
+   private void appendToRange(final StringBuilder sb, final Version version) {
       final boolean hasMicro = version.getMicro() > 0;
       final boolean hasMinorOrMicro = version.getMinor() > 0 || hasMicro;
       sb.append(version.getMajor());
-      if (hasMinorOrMicro)
-      {
+      if (hasMinorOrMicro) {
          sb.append('.');
          sb.append(version.getMinor());
-         if (hasMicro)
-         {
+         if (hasMicro) {
             sb.append('.');
             sb.append(version.getMicro());
          }
       }
    }
 
-   private boolean isSnapshotVersion(BundleDescription bundle, Version version)
-   {
-      for (SnapshotRule snapshotRule : snapshotRules)
-      {
-         if (snapshotRule.isSnapshotVersion(bundle, version))
-         {
+   private boolean isSnapshotVersion(BundleDescription bundle, Version version) {
+      for (SnapshotRule snapshotRule : snapshotRules) {
+         if (snapshotRule.isSnapshotVersion(bundle, version)) {
             return true;
          }
       }

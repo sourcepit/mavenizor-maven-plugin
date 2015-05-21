@@ -15,28 +15,22 @@
  */
 
 package org.sourcepit.mavenizor.maven.converter;
-public enum ConvertionDirective
-{
+public enum ConvertionDirective {
    AUTO_DETECT, MAVENIZE, OMIT, IGNORE, REPLACE;
 
    private final String literal;
 
-   private ConvertionDirective()
-   {
+   private ConvertionDirective() {
       this.literal = name().toLowerCase();
    }
 
-   public final String literal()
-   {
+   public final String literal() {
       return literal;
    }
 
-   public static ConvertionDirective valueOfLiteral(String literal)
-   {
-      for (ConvertionDirective mode : values())
-      {
-         if (mode.literal().equals(literal))
-         {
+   public static ConvertionDirective valueOfLiteral(String literal) {
+      for (ConvertionDirective mode : values()) {
+         if (mode.literal().equals(literal)) {
             return mode;
          }
       }

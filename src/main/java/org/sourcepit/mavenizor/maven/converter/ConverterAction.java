@@ -18,25 +18,21 @@ package org.sourcepit.mavenizor.maven.converter;
 
 import org.sourcepit.common.maven.model.MavenArtifact;
 
-public class ConverterAction
-{
+public class ConverterAction {
    private final ConvertionDirective directive;
 
    private final MavenArtifact replacement;
 
-   public ConverterAction(ConvertionDirective directive, MavenArtifact replacement)
-   {
+   public ConverterAction(ConvertionDirective directive, MavenArtifact replacement) {
       this.directive = directive;
       this.replacement = replacement;
    }
 
-   public ConvertionDirective getDirective()
-   {
+   public ConvertionDirective getDirective() {
       return directive;
    }
 
-   public MavenArtifact getReplacement()
-   {
+   public MavenArtifact getReplacement() {
       return replacement;
    }
 

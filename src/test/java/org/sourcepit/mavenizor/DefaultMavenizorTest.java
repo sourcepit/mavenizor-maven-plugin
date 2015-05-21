@@ -49,8 +49,7 @@ import org.sourcepit.mavenizor.maven.converter.BundleConverter;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategy;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory;
 
-public class DefaultMavenizorTest extends AbstractMavenizorTest
-{
+public class DefaultMavenizorTest extends AbstractMavenizorTest {
    @Inject
    private DefaultMavenizor mavenizor;
 
@@ -65,8 +64,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
 
    @Before
    @Override
-   public void setUp() throws Exception
-   {
+   public void setUp() throws Exception {
       super.setUp();
       bundlesDir = new File(getWs().getRoot(), "bundles");
       workingDir = new File(getWs().getRoot(), "work");
@@ -74,11 +72,9 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testSingleBundle()
-   {
+   public void testSingleBundle() {
       // expecting same behavior for all target types
-      for (TargetType targetType : TargetType.values())
-      {
+      for (TargetType targetType : TargetType.values()) {
          BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
          newBundle(bundlesDir, manifest);
 
@@ -111,10 +107,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithEmbeddedArtifact()
-   {
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testBundleWithEmbeddedArtifact() {
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -158,10 +157,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithEmbeddedArtifact_OmitBundle()
-   {
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testBundleWithEmbeddedArtifact_OmitBundle() {
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -192,8 +194,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithEmbeddedArtifact_AutoOmitBundleAndEmeddedIsMain()
-   {
+   public void testBundleWithEmbeddedArtifact_AutoOmitBundleAndEmeddedIsMain() {
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
 
@@ -253,10 +254,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithEmbeddedArtifact_IgnoreBundle()
-   {
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testBundleWithEmbeddedArtifact_IgnoreBundle() {
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest);
@@ -276,10 +280,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithDependencyToBundleWithEmbeddedArtifact() throws IOException
-   {
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testBundleWithDependencyToBundleWithEmbeddedArtifact() throws IOException {
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest1);
@@ -317,10 +324,13 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithDependencyToBundleWithEmbeddedArtifact_OmitBundle() throws IOException
-   {
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+   public void testBundleWithDependencyToBundleWithEmbeddedArtifact_OmitBundle() throws IOException {
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
 
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest1);
@@ -365,8 +375,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testBundleWithEmbeddedArtifactWithDependencyToBundle() throws IOException
-   {
+   public void testBundleWithEmbeddedArtifactWithDependencyToBundle() throws IOException {
       BundleManifest manifest1 = newManifest("org.sourcepit.testbundle", "1.0.0.qualifier");
       newBundle(bundlesDir, manifest1);
       manifest1.eResource().save(null);
@@ -374,8 +383,12 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
       BundleManifest manifest2 = newManifest("org.sourcepit.testbundle2", "1.0.0.qualifier");
       File bundleDir = newBundle(bundlesDir, manifest2);
       addBundleRequirement(manifest2, manifest1.getBundleSymbolicName().getSymbolicName(), "[1,2)");
-      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans").setArtifactId("wurst").setType("jar")
-         .setVersion("3").toArtifactKey().getProjectKey();
+      final ProjectKey libGav = new ArtifactKeyBuilder().setGroupId("hans")
+         .setArtifactId("wurst")
+         .setType("jar")
+         .setVersion("3")
+         .toArtifactKey()
+         .getProjectKey();
       addEmbeddedLibrary(bundleDir, manifest2, ".");
       addEmbeddedLibrary(bundleDir, manifest2, "embedded.jar", libGav);
       addEmbeddedLibrary(bundleDir, manifest2, "embedded2.jar");
@@ -435,8 +448,7 @@ public class DefaultMavenizorTest extends AbstractMavenizorTest
    }
 
 
-   private Mavenizor.Request newRequest(State osgiState, TargetType targetType)
-   {
+   private Mavenizor.Request newRequest(State osgiState, TargetType targetType) {
       final Mavenizor.Request request = new Mavenizor.Request();
       request.setState(osgiState);
       request.setGAVStrategy(gavStrategy);

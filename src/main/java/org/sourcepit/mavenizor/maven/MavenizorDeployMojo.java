@@ -37,8 +37,7 @@ import org.sourcepit.common.maven.core.MavenProjectUtils;
  * @author Bernd Vogt <bernd.vogt@sourcepit.org>
  */
 @Mojo(name = "deploy-bundles", defaultPhase = LifecyclePhase.DEPLOY, requiresDependencyResolution = ResolutionScope.TEST)
-public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
-{
+public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo {
    @Inject
    private RepositoryConnectorProvider repositoryConnectorProvider;
 
@@ -55,19 +54,16 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
    private MetadataResolver metadataResolver;
 
    @Override
-   protected AbstractDistributionHandler getDistributionHandler()
-   {
+   protected AbstractDistributionHandler getDistributionHandler() {
       final ArtifactRepository localRepository = getLocalRepository();
       final ArtifactRepository deploymentRepository = getAlternateDeploymentRepository();
       final ArtifactRepository snapshotRepository;
       final ArtifactRepository releaseRepository;
-      if (deploymentRepository == null)
-      {
+      if (deploymentRepository == null) {
          snapshotRepository = getSnapshotRepository();
          releaseRepository = getReleaseRepository();
       }
-      else
-      {
+      else {
          snapshotRepository = deploymentRepository;
          releaseRepository = deploymentRepository;
       }
@@ -75,27 +71,21 @@ public class MavenizorDeployMojo extends AbstractDistributingMavenizorMojo
          localRepository, snapshotRepository, releaseRepository, metadataResolver);
    }
 
-   protected ArtifactRepository getSnapshotRepository()
-   {
+   protected ArtifactRepository getSnapshotRepository() {
       return MavenProjectUtils.getSnapshotArtifactRepository(project);
    }
 
-   protected ArtifactRepository getReleaseRepository()
-   {
+   protected ArtifactRepository getReleaseRepository() {
       return MavenProjectUtils.getReleaseArtifactRepository(project);
    }
 
-   protected ArtifactRepository getAlternateDeploymentRepository()
-   {
-      if (altDeploymentRepository == null)
-      {
+   protected ArtifactRepository getAlternateDeploymentRepository() {
+      if (altDeploymentRepository == null) {
          return null;
       }
-      else
-      {
+      else {
          final String[] segments = altDeploymentRepository.split("::");
-         if (segments.length != 3)
-         {
+         if (segments.length != 3) {
             throw new IllegalArgumentException("Invalid repository declaration " + altDeploymentRepository
                + ". Expected format: id::layout::url");
          }

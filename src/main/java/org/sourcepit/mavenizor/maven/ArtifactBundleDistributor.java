@@ -37,8 +37,7 @@ import org.sourcepit.mavenizor.ArtifactBundle;
 import org.sourcepit.mavenizor.maven.converter.ConvertedArtifact;
 
 @Named
-public class ArtifactBundleDistributor
-{
+public class ArtifactBundleDistributor {
    @Inject
    private RepositorySystem repositorySystem;
 
@@ -48,23 +47,18 @@ public class ArtifactBundleDistributor
    @Inject
    private ModelWriter modelWriter;
 
-   interface DistributionHandler
-   {
+   interface DistributionHandler {
       void distribute(Artifact artifact, boolean forceOverwrite);
    }
 
    public void distribute(File workingDir, ArtifactBundle artifactBundle, DistributionHandler distributor,
-      boolean forceOverwrite)
-   {
+      boolean forceOverwrite) {
       boolean pomDistributed = false;
-      for (ConvertedArtifact cArtifact : artifactBundle.getArtifacts())
-      {
-         if (cArtifact.isMavenized())
-         {
+      for (ConvertedArtifact cArtifact : artifactBundle.getArtifacts()) {
+         if (cArtifact.isMavenized()) {
             MavenArtifact mavenArtifact = cArtifact.getMavenArtifact();
             final Model pom = artifactBundle.getPom();
-            if (!pomDistributed)
-            {
+            if (!pomDistributed) {
                distributePom(workingDir, pom, distributor, forceOverwrite);
                pomDistributed = true;
             }
@@ -75,16 +69,13 @@ public class ArtifactBundleDistributor
       }
    }
 
-   private void distributePom(File workinDir, final Model pom, DistributionHandler distributor, boolean forceOverwrite)
-   {
+   private void distributePom(File workinDir, final Model pom, DistributionHandler distributor, boolean forceOverwrite) {
       final Artifact pomArtifact = createArtifact(pom, "pom");
 
       final File pomFile = new File(workinDir, repositoryLayout.pathOf(pomArtifact));
-      new IOOperation<OutputStream>(buffOut(fileOut(pomFile, true)))
-      {
+      new IOOperation<OutputStream>(buffOut(fileOut(pomFile, true))) {
          @Override
-         protected void run(OutputStream outputStream) throws IOException
-         {
+         protected void run(OutputStream outputStream) throws IOException {
             modelWriter.write(outputStream, null, pom);
          }
       }.run();
@@ -92,18 +83,15 @@ public class ArtifactBundleDistributor
       distribute(distributor, pomArtifact, forceOverwrite);
    }
 
-   private void distribute(DistributionHandler distributor, Artifact artifact, boolean forceOverwrite)
-   {
+   private void distribute(DistributionHandler distributor, Artifact artifact, boolean forceOverwrite) {
       distributor.distribute(artifact, forceOverwrite);
    }
 
-   private Artifact createArtifact(final Model model, String packaging)
-   {
+   private Artifact createArtifact(final Model model, String packaging) {
       return repositorySystem.createArtifact(model.getGroupId(), model.getArtifactId(), model.getVersion(), packaging);
    }
 
-   private Artifact createArtifact(final Model model, String classifier, String type)
-   {
+   private Artifact createArtifact(final Model model, String classifier, String type) {
       return repositorySystem.createArtifactWithClassifier(model.getGroupId(), model.getArtifactId(),
          model.getVersion(), type, classifier);
    }

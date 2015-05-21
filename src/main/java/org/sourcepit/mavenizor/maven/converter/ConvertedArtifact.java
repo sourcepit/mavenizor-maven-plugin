@@ -18,38 +18,32 @@ package org.sourcepit.mavenizor.maven.converter;
 
 import org.sourcepit.common.maven.model.MavenArtifact;
 
-public class ConvertedArtifact
-{
+public class ConvertedArtifact {
    private final MavenArtifact mavenArtifact;
 
    private final ConvertionDirective directive;
 
    private final boolean embeddedLibrary;
 
-   public ConvertedArtifact(MavenArtifact mavenArtifact, ConvertionDirective directive, boolean embeddedLibrary)
-   {
+   public ConvertedArtifact(MavenArtifact mavenArtifact, ConvertionDirective directive, boolean embeddedLibrary) {
       this.mavenArtifact = mavenArtifact;
       this.directive = directive;
       this.embeddedLibrary = embeddedLibrary;
    }
 
-   public MavenArtifact getMavenArtifact()
-   {
+   public MavenArtifact getMavenArtifact() {
       return mavenArtifact;
    }
 
-   public ConvertionDirective getDirective()
-   {
+   public ConvertionDirective getDirective() {
       return directive;
    }
 
-   public boolean isMavenized()
-   {
+   public boolean isMavenized() {
       return ConvertionDirective.MAVENIZE == directive;
    }
 
-   public boolean isEmbeddedLibrary()
-   {
+   public boolean isEmbeddedLibrary() {
       return embeddedLibrary;
    }
 }

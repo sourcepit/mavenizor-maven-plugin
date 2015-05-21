@@ -15,37 +15,30 @@
  */
 
 package org.sourcepit.mavenizor.maven;
-public class RequirementFilter
-{
+public class RequirementFilter {
    private String bundle, permitted, erase;
 
-   public String getBundle()
-   {
+   public String getBundle() {
       return bundle;
    }
 
-   public void setBundle(String bundle)
-   {
+   public void setBundle(String bundle) {
       this.bundle = bundle;
    }
 
-   public String getPermitted()
-   {
+   public String getPermitted() {
       return permitted;
    }
 
-   public void setPermitted(String permitted)
-   {
+   public void setPermitted(String permitted) {
       this.permitted = permitted;
    }
 
-   public String getErase()
-   {
+   public String getErase() {
       return erase;
    }
 
-   public void setErase(String erase)
-   {
+   public void setErase(String erase) {
       this.erase = erase;
    }
 

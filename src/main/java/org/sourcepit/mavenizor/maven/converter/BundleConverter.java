@@ -25,69 +25,56 @@ import org.sourcepit.common.utils.path.Path;
 import org.sourcepit.common.utils.props.PropertiesMap;
 import org.sourcepit.mavenizor.Mavenizor.TargetType;
 
-public interface BundleConverter
-{
-   class Request
-   {
+public interface BundleConverter {
+   class Request {
       private BundleDescription bundle;
       private File workingDir;
       private TargetType targetType;
       private GAVStrategy gavStrategy;
       private PropertiesMap options;
 
-      public TargetType getTargetType()
-      {
+      public TargetType getTargetType() {
          return targetType;
       }
 
-      public void setTargetType(TargetType targetType)
-      {
+      public void setTargetType(TargetType targetType) {
          this.targetType = targetType;
       }
 
-      public BundleDescription getBundle()
-      {
+      public BundleDescription getBundle() {
          return bundle;
       }
 
-      public void setBundle(BundleDescription bundle)
-      {
+      public void setBundle(BundleDescription bundle) {
          this.bundle = bundle;
       }
 
-      public GAVStrategy getGAVStrategy()
-      {
+      public GAVStrategy getGAVStrategy() {
          return gavStrategy;
       }
 
-      public void setGAVStrategy(GAVStrategy gavStrategy)
-      {
+      public void setGAVStrategy(GAVStrategy gavStrategy) {
          this.gavStrategy = gavStrategy;
       }
 
-      public PropertiesMap getOptions()
-      {
+      public PropertiesMap getOptions() {
          return options;
       }
 
-      public void setOptions(PropertiesMap options)
-      {
+      public void setOptions(PropertiesMap options) {
          this.options = options;
       }
 
-      public File getWorkingDirectory()
-      {
+      public File getWorkingDirectory() {
          return workingDir;
       }
 
-      public void setWorkingDirectory(File workingDir)
-      {
+      public void setWorkingDirectory(File workingDir) {
          this.workingDir = workingDir;
       }
    }
 
-   class Result
-   {
+   class Result {
       private final BundleDescription bundle;
 
       private final ConvertionDirective convertionDirective;
@@ -98,34 +85,28 @@ public interface BundleConverter
 
       private final List<Path> missingEmbeddedLibraries = new ArrayList<Path>();
 
-      public Result(BundleDescription bundle, ConvertionDirective directive)
-      {
+      public Result(BundleDescription bundle, ConvertionDirective directive) {
          this.bundle = bundle;
          this.convertionDirective = directive;
       }
 
-      public BundleDescription getBundle()
-      {
+      public BundleDescription getBundle() {
          return bundle;
       }
 
-      public ConvertionDirective getConvertionDirective()
-      {
+      public ConvertionDirective getConvertionDirective() {
          return convertionDirective;
       }
 
-      public List<ConvertedArtifact> getConvertedArtifacts()
-      {
+      public List<ConvertedArtifact> getConvertedArtifacts() {
          return convertedArtifacts;
       }
 
-      public List<Path> getUnhandledEmbeddedLibraries()
-      {
+      public List<Path> getUnhandledEmbeddedLibraries() {
          return unhandledEmbeddedLibraries;
       }
 
-      public List<Path> getMissingEmbeddedLibraries()
-      {
+      public List<Path> getMissingEmbeddedLibraries() {
          return missingEmbeddedLibraries;
       }
    }

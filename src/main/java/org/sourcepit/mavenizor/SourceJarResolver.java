@@ -20,7 +20,6 @@ import java.io.File;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 
-public interface SourceJarResolver
-{
+public interface SourceJarResolver {
    File resolveSource(BundleDescription bundle);
 }

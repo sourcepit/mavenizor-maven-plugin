@@ -46,16 +46,14 @@ import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.mavenizor.maven.BundleResolver;
 
 @Named("tycho-project")
-public class TychoProjectBundleResolver implements BundleResolver
-{
+public class TychoProjectBundleResolver implements BundleResolver {
    @Inject
    private DefaultDependencyResolverFactory targetPlatformResolverLocator;
 
    @Inject
    private TychoSourceIUResolver sourceResolver;
 
-   public void resolve(final MavenSession session, final Handler handler)
-   {
+   public void resolve(final MavenSession session, final Handler handler) {
       final MavenProject project = session.getCurrentProject();
 
       DependencyResolver platformResolver = targetPlatformResolverLocator.lookupDependencyResolver(project);
@@ -71,15 +69,12 @@ public class TychoProjectBundleResolver implements BundleResolver
       TargetPlatform targetPlatform = platformResolver.computePreliminaryTargetPlatform(session, project,
          reactorProjects);
 
-      final DependencyResolverConfiguration resolverConfiguration = new DependencyResolverConfiguration()
-      {
-         public OptionalResolutionAction getOptionalResolutionAction()
-         {
+      final DependencyResolverConfiguration resolverConfiguration = new DependencyResolverConfiguration() {
+         public OptionalResolutionAction getOptionalResolutionAction() {
             return OptionalResolutionAction.REQUIRE;
          }
 
-         public List<Dependency> getExtraRequirements()
-         {
+         public List<Dependency> getExtraRequirements() {
             return dependencies;
          }
       };
@@ -87,38 +82,31 @@ public class TychoProjectBundleResolver implements BundleResolver
       DependencyArtifacts dependencyArtifacts = platformResolver.resolveDependencies(session, project, targetPlatform,
          reactorProjects, resolverConfiguration);
 
-      if (dependencyArtifacts == null)
-      {
+      if (dependencyArtifacts == null) {
          throw Exceptions.pipe(new MojoExecutionException("Cannot determinate build target platform location"));
       }
 
       final Set<String> sourceTargetBundles = new LinkedHashSet<String>();
 
-      for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(PackagingType.TYPE_ECLIPSE_PLUGIN))
-      {
+      for (ArtifactDescriptor artifact : dependencyArtifacts.getArtifacts(PackagingType.TYPE_ECLIPSE_PLUGIN)) {
          ReactorProject mavenProject = artifact.getMavenProject();
-         if (mavenProject == null)
-         {
+         if (mavenProject == null) {
             handler.resolved(artifact.getLocation());
             final ArtifactKey key = artifact.getKey();
             sourceTargetBundles.add(key.getId() + "_" + key.getVersion()); // try to resolve sources for non-project
          }
-         else
-         {
+         else {
             File projectArtifact = mavenProject.getArtifact(artifact.getClassifier());
-            if (projectArtifact == null)
-            {
+            if (projectArtifact == null) {
                handler.resolved(artifact.getLocation());
             }
-            else
-            {
+            else {
                handler.resolved(projectArtifact);
             }
          }
       }
 
-      if (!sourceTargetBundles.isEmpty())
-      {
+      if (!sourceTargetBundles.isEmpty()) {
          sourceResolver.resolveSources(session, targetPlatform, sourceTargetBundles, handler);
       }
    }

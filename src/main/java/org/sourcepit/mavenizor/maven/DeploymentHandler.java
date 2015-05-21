@@ -54,8 +54,7 @@ import org.eclipse.aether.util.ChecksumUtils;
 import org.slf4j.Logger;
 import org.sourcepit.common.utils.lang.Exceptions;
 
-public final class DeploymentHandler extends AbstractDistributionHandler
-{
+public final class DeploymentHandler extends AbstractDistributionHandler {
    private final RepositoryConnectorProvider repositoryConnectorProvider;
    private final RepositorySystemSession repositorySession;
    private final ArtifactDeployer deployer;
@@ -66,8 +65,7 @@ public final class DeploymentHandler extends AbstractDistributionHandler
 
    public DeploymentHandler(Logger log, RepositoryConnectorProvider repositoryConnectorProvider,
       RepositorySystemSession repositorySession, ArtifactDeployer deployer, ArtifactRepository localRepository,
-      ArtifactRepository snapshotRepository, ArtifactRepository releaseRepository, MetadataResolver metadataResolver)
-   {
+      ArtifactRepository snapshotRepository, ArtifactRepository releaseRepository, MetadataResolver metadataResolver) {
       super(log);
       this.repositoryConnectorProvider = repositoryConnectorProvider;
       this.repositorySession = repositorySession;
@@ -79,35 +77,29 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    }
 
    @Override
-   protected void doDistribute(Artifact artifact)
-   {
+   protected void doDistribute(Artifact artifact) {
       final ArtifactRepository deploymentRepository = determineDeploymentRepository(artifact);
-      try
-      {
+      try {
          deployer.deploy(artifact.getFile(), artifact, deploymentRepository, localRepository);
       }
-      catch (ArtifactDeploymentException e)
-      {
+      catch (ArtifactDeploymentException e) {
          throw Exceptions.pipe(e);
       }
    }
 
    @Override
-   protected String getLocalChecksum(Artifact artifact)
-   {
+   protected String getLocalChecksum(Artifact artifact) {
       return calc(artifact.getFile(), "SHA-1");
    }
 
    @Override
-   protected String getTargetChecksum(Artifact artifact)
-   {
+   protected String getTargetChecksum(Artifact artifact) {
       final ArtifactRepository deploymentRepository = determineDeploymentRepository(artifact);
       final RemoteRepository remoteRepo = RepositoryUtils.toRepo(deploymentRepository);
       return readRemoteChecksum(remoteRepo, RepositoryUtils.toArtifact(artifact));
    }
 
-   private String readRemoteChecksum(RemoteRepository remoteRepository, org.eclipse.aether.artifact.Artifact artifact)
-   {
+   private String readRemoteChecksum(RemoteRepository remoteRepository, org.eclipse.aether.artifact.Artifact artifact) {
       final org.eclipse.aether.artifact.Artifact sha1Artifact = toSha1Artifact(expandSnapshotVersion(remoteRepository,
          artifact));
 
@@ -115,8 +107,7 @@ public final class DeploymentHandler extends AbstractDistributionHandler
          + UUID.randomUUID().toString();
 
       final File sha1File = new File(localRepository.getBasedir(), sha1Path);
-      try
-      {
+      try {
          final ArtifactDownload download = new ArtifactDownload();
          download.setArtifact(sha1Artifact);
          download.setFile(sha1File);
@@ -124,69 +115,55 @@ public final class DeploymentHandler extends AbstractDistributionHandler
          download(remoteRepository, download);
          return ChecksumUtils.read(sha1File);
       }
-      catch (ArtifactNotFoundException e)
-      {
+      catch (ArtifactNotFoundException e) {
          return null;
       }
-      catch (IOException e)
-      {
+      catch (IOException e) {
          throw Exceptions.pipe(e);
       }
-      finally
-      {
+      finally {
          sha1File.delete();
       }
 
    }
 
    private void download(RemoteRepository remoteRepository, final ArtifactDownload download)
-      throws ArtifactNotFoundException
-   {
+      throws ArtifactNotFoundException {
       RepositoryConnector connector = null;
-      try
-      {
+      try {
          connector = repositoryConnectorProvider.newRepositoryConnector(repositorySession, remoteRepository);
       }
-      catch (NoRepositoryConnectorException e)
-      {
+      catch (NoRepositoryConnectorException e) {
          throw Exceptions.pipe(e);
       }
 
-      try
-      {
+      try {
          connector.get(Collections.singletonList(download), null);
          final ArtifactTransferException error = download.getException();
-         if (error != null)
-         {
+         if (error != null) {
             throw error;
          }
       }
-      catch (ArtifactNotFoundException e)
-      {
+      catch (ArtifactNotFoundException e) {
          throw e;
       }
-      catch (ArtifactTransferException e)
-      {
+      catch (ArtifactTransferException e) {
          throw Exceptions.pipe(e);
       }
-      finally
-      {
-         if (connector != null)
-         {
+      finally {
+         if (connector != null) {
             connector.close();
          }
       }
    }
 
-   private org.eclipse.aether.artifact.Artifact toSha1Artifact(org.eclipse.aether.artifact.Artifact artifact)
-   {
+   private org.eclipse.aether.artifact.Artifact toSha1Artifact(org.eclipse.aether.artifact.Artifact artifact) {
       return new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(),
          artifact.getExtension() + ".sha1", artifact.getVersion());
    }
 
    private org.eclipse.aether.artifact.Artifact expandSnapshotVersion(final RemoteRepository remoteRepo,
-      org.eclipse.aether.artifact.Artifact artifact)
-   {
+      org.eclipse.aether.artifact.Artifact artifact) {
       final String groupId = artifact.getGroupId();
       final String artifactId = artifact.getArtifactId();
       final String version = expandSnapshotVersion(remoteRepo, groupId, artifactId, artifact.getVersion());
@@ -195,12 +172,9 @@ public final class DeploymentHandler extends AbstractDistributionHandler
    }
 
    private String expandSnapshotVersion(final RemoteRepository remoteRepo, String groupId, String artifactId,
-      String version)
-   {
-      if (version.endsWith("-SNAPSHOT"))
-      {
-         try
-         {
+      String version) {
+      if (version.endsWith("-SNAPSHOT")) {
+         try {
             final Metadata metadata = resolveMetadata(new DefaultMetadata(groupId, artifactId, version,
                "maven-metadata.xml", Metadata.Nature.SNAPSHOT), remoteRepo);
 
@@ -209,44 +183,36 @@ public final class DeploymentHandler extends AbstractDistributionHandler
             final org.apache.maven.artifact.repository.metadata.Metadata mavenMetadata = readMavenMetadata(file);
 
             final Versioning versioning = mavenMetadata.getVersioning();
-            if (versioning != null)
-            {
+            if (versioning != null) {
                Snapshot snapshot = versioning.getSnapshot();
-               if (snapshot != null)
-               {
+               if (snapshot != null) {
                   String qualifier = snapshot.getTimestamp() + "-" + snapshot.getBuildNumber();
                   return version.substring(0, version.length() - "-SNAPSHOT".length() + 1) + qualifier;
                }
             }
          }
-         catch (MetadataNotFoundException e)
-         {
+         catch (MetadataNotFoundException e) {
          }
       }
       return version;
    }
 
-   private org.apache.maven.artifact.repository.metadata.Metadata readMavenMetadata(File file)
-   {
+   private org.apache.maven.artifact.repository.metadata.Metadata readMavenMetadata(File file) {
       FileInputStream fis = null;
-      try
-      {
+      try {
          fis = new FileInputStream(file);
          return new MetadataXpp3Reader().read(fis, false);
       }
-      catch (Exception e)
-      {
+      catch (Exception e) {
          throw Exceptions.pipe(e);
       }
-      finally
-      {
+      finally {
          IOUtils.closeQuietly(fis);
       }
    }
 
    private Metadata resolveMetadata(Metadata metadata, RemoteRepository remoteRepository)
-      throws MetadataNotFoundException
-   {
+      throws MetadataNotFoundException {
       final MetadataRequest request = new MetadataRequest();
       request.setMetadata(metadata);
       request.setRepository(remoteRepository);
@@ -259,27 +225,22 @@ public final class DeploymentHandler extends AbstractDistributionHandler
       final MetadataResult metadataResult = metadataResults.get(0);
 
       final Exception exception = metadataResult.getException();
-      if (exception instanceof MetadataNotFoundException)
-      {
+      if (exception instanceof MetadataNotFoundException) {
          throw (MetadataNotFoundException) exception;
       }
-      else if (exception != null)
-      {
+      else if (exception != null) {
          throw Exceptions.pipe(exception);
       }
 
       return metadataResult.getMetadata();
    }
 
-   private ArtifactRepository determineDeploymentRepository(Artifact artifact)
-   {
+   private ArtifactRepository determineDeploymentRepository(Artifact artifact) {
       final ArtifactRepository deploymentRepository;
-      if (ArtifactUtils.isSnapshot(artifact.getVersion()))
-      {
+      if (ArtifactUtils.isSnapshot(artifact.getVersion())) {
          deploymentRepository = snapshotRepository;
       }
-      else
-      {
+      else {
          deploymentRepository = releaseRepository;
       }
       return deploymentRepository;

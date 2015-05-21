@@ -21,10 +21,8 @@ import java.io.File;
 import org.apache.maven.execution.MavenSession;
 
 
-public interface BundleResolver
-{
-   interface Handler
-   {
+public interface BundleResolver {
+   interface Handler {
       void resolved(File bundleLocation);
    }
 

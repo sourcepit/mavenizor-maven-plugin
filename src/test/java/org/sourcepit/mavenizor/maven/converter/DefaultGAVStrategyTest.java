@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 import static org.sourcepit.mavenizor.MavenizorTestHarness.newBundleDescription;
 
 import javax.inject.Inject;
-import java.lang.IllegalArgumentException;
 
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.junit.Test;
@@ -32,40 +31,32 @@ import org.sourcepit.mavenizor.AbstractMavenizorTest;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.Request;
 import org.sourcepit.mavenizor.maven.converter.GAVStrategyFactory.SnapshotRule;
 
-public class DefaultGAVStrategyTest extends AbstractMavenizorTest
-{
+public class DefaultGAVStrategyTest extends AbstractMavenizorTest {
    @Inject
    private DefaultGAVStrategyFactory factory;
 
    @Test
-   public void testDeriveGroupId()
-   {
+   public void testDeriveGroupId() {
       final GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
-      try
-      {
+      try {
          converter.deriveGroupId((BundleDescription) null);
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
-      try
-      {
+      try {
          converter.deriveGroupId(newBundleDescription(null));
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
-      try
-      {
+      try {
          converter.deriveGroupId(newBundleDescription(""));
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
       BundleDescription bundle = newBundleDescription("org.sourcepit.mavenizor.core");
@@ -98,8 +89,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDeriveGroupIdWithGroup3Prefix()
-   {
+   public void testDeriveGroupIdWithGroup3Prefix() {
       GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.getGroup3Prefixes().add("org.eclipse");
 
@@ -135,8 +125,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testGroupIdMapping()
-   {
+   public void testGroupIdMapping() {
       GAVStrategyFactory.Request request = new GAVStrategyFactory.Request();
       request.getGroupIdMappings().put("foo", "org.foo");
       request.getGroupIdMappings().put("!org.sourcepit.**", "srcpit_${bundle.groupId}");
@@ -168,34 +157,27 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDeriveArtifactId()
-   {
+   public void testDeriveArtifactId() {
       final GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
-      try
-      {
+      try {
          converter.deriveArtifactId((BundleDescription) null);
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
-      try
-      {
+      try {
          converter.deriveArtifactId(newBundleDescription(null));
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
-      try
-      {
+      try {
          converter.deriveArtifactId(newBundleDescription(""));
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
       BundleDescription bundle = newBundleDescription("org.sourcepit.mavenizor.core");
@@ -216,16 +198,13 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDeriveMavenVersion()
-   {
+   public void testDeriveMavenVersion() {
       GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
-      try
-      {
+      try {
          converter.deriveMavenVersion(null);
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
       BundleDescription bundle = newBundleDescription("foo", "1");
@@ -246,8 +225,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDeriveCustomSnapshotVersion()
-   {
+   public void testDeriveCustomSnapshotVersion() {
       final Request defaultRequest = new Request();
 
       GAVStrategy converter = factory.newGAVStrategy(defaultRequest);
@@ -257,10 +235,8 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
       assertThat(mavenVersion, equalTo("1.0.0"));
 
       final GAVStrategyFactory.Request customRequest = new GAVStrategyFactory.Request();
-      customRequest.getAdditionalSnapshotRules().add(new SnapshotRule()
-      {
-         public boolean isSnapshotVersion(BundleDescription bundle, Version version)
-         {
+      customRequest.getAdditionalSnapshotRules().add(new SnapshotRule() {
+         public boolean isSnapshotVersion(BundleDescription bundle, Version version) {
             return "foo".equals(bundle.getSymbolicName());
          }
       });
@@ -273,8 +249,7 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDisableDefaulSnapshotRules()
-   {
+   public void testDisableDefaulSnapshotRules() {
       GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
 
       BundleDescription bundle = newBundleDescription("foo", "1.0.0.qualifier");
@@ -300,26 +275,21 @@ public class DefaultGAVStrategyTest extends AbstractMavenizorTest
    }
 
    @Test
-   public void testDeriveMavenVersionRange()
-   {
+   public void testDeriveMavenVersionRange() {
       GAVStrategy converter = factory.newGAVStrategy(new GAVStrategyFactory.Request());
-      try
-      {
+      try {
          converter.deriveMavenVersionRange(null, null);
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
-      try
-      {
+      try {
          BundleDescription bundle = newBundleDescription("foo", "1");
          converter.deriveMavenVersionRange(bundle, null);
          fail();
       }
-      catch (IllegalArgumentException e)
-      {
+      catch (IllegalArgumentException e) {
       }
 
       BundleDescription bundle = newBundleDescription("foo", "1");

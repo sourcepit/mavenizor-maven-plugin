@@ -42,27 +42,22 @@ import org.eclipse.tycho.resolver.TychoResolver;
 import com.google.common.base.Optional;
 
 @Named
-public class MavenProjectFacade
-{
+public class MavenProjectFacade {
    @Inject
    private Map<String, TychoProject> projectTypes;
 
    @Inject
    private TychoResolver resolver;
 
-   public TychoProject getTychoProject(MavenProject project)
-   {
+   public TychoProject getTychoProject(MavenProject project) {
       return projectTypes.get(project.getPackaging());
    }
 
-   public Map<String, MavenProject> createVidToProjectMap(MavenSession session)
-   {
+   public Map<String, MavenProject> createVidToProjectMap(MavenSession session) {
       final Map<String, MavenProject> vidToProjectMap = new HashMap<String, MavenProject>();
-      for (MavenProject mavenProject : session.getProjects())
-      {
+      for (MavenProject mavenProject : session.getProjects()) {
          final TychoProject tychoProject = getTychoProject(mavenProject);
-         if (tychoProject != null)
-         {
+         if (tychoProject != null) {
             final ReactorProject reactorProject = DefaultReactorProject.adapt(mavenProject);
             final ArtifactKey artifactKey = tychoProject.getArtifactKey(reactorProject);
             final String vid = artifactKey.getId() + "_" + artifactKey.getVersion();
@@ -73,76 +68,59 @@ public class MavenProjectFacade
    }
 
    public Optional<MavenProject> getMavenProject(final Map<String, MavenProject> projectsMap,
-      ArtifactDescriptor artifact)
-   {
+      ArtifactDescriptor artifact) {
       final ArtifactKey artifactKey = artifact.getKey();
       return getMavenProject(projectsMap, artifactKey.getId(), artifactKey.getVersion());
    }
 
-   public Optional<MavenProject> getMavenProject(Map<String, MavenProject> projectsMap, String id, String version)
-   {
+   public Optional<MavenProject> getMavenProject(Map<String, MavenProject> projectsMap, String id, String version) {
       final String vid = id + "_" + version;
       return fromNullable(projectsMap.get(vid));
    }
 
-   public ArtifactKey getArtifactKey(ArtifactDescriptor artifact, Optional<MavenProject> mavenProject)
-   {
-      if (mavenProject.isPresent())
-      {
+   public ArtifactKey getArtifactKey(ArtifactDescriptor artifact, Optional<MavenProject> mavenProject) {
+      if (mavenProject.isPresent()) {
          final MavenProject mp = mavenProject.get();
          return getTychoProject(mp).getArtifactKey(DefaultReactorProject.adapt(mp));
       }
-      else
-      {
+      else {
          return artifact.getKey();
       }
    }
 
-   public File getLocation(ArtifactDescriptor artifact, Optional<MavenProject> mavenProject)
-   {
-      if (mavenProject.isPresent())
-      {
+   public File getLocation(ArtifactDescriptor artifact, Optional<MavenProject> mavenProject) {
+      if (mavenProject.isPresent()) {
          return mavenProject.get().getBasedir();
       }
-      else
-      {
+      else {
          return artifact.getLocation();
       }
    }
 
-   public File getLocation(Entry entry, Optional<MavenProject> mavenProject)
-   {
-      if (mavenProject.isPresent())
-      {
+   public File getLocation(Entry entry, Optional<MavenProject> mavenProject) {
+      if (mavenProject.isPresent()) {
          return mavenProject.get().getBasedir();
       }
-      else
-      {
+      else {
          return entry.getLocation();
       }
    }
 
-   public TargetPlatformConfiguration getTargetPlatformConfiguration(MavenSession session, MavenProject project)
-   {
+   public TargetPlatformConfiguration getTargetPlatformConfiguration(MavenSession session, MavenProject project) {
       setupSessionLazy(session);
       return TychoProjectUtils.getTargetPlatformConfiguration(project);
    }
 
-   private void setupSessionLazy(MavenSession session)
-   {
+   private void setupSessionLazy(MavenSession session) {
       List<MavenProject> projects = session.getProjects();
-      for (MavenProject project : projects)
-      {
+      for (MavenProject project : projects) {
          setupProjectLazy(session, project);
       }
    }
 
-   private void setupProjectLazy(MavenSession session, MavenProject project)
-   {
-      final TargetPlatformConfiguration targetPlatformConfiguration = (TargetPlatformConfiguration) project
-         .getContextValue(TychoConstants.CTX_TARGET_PLATFORM_CONFIGURATION);
-      if (targetPlatformConfiguration == null)
-      {
+   private void setupProjectLazy(MavenSession session, MavenProject project) {
+      final TargetPlatformConfiguration targetPlatformConfiguration = (TargetPlatformConfiguration) project.getContextValue(TychoConstants.CTX_TARGET_PLATFORM_CONFIGURATION);
+      if (targetPlatformConfiguration == null) {
          // project was not set up by Tycho. Maybe running in -Dtycho.mode=maven
          resolver.setupProject(session, project, DefaultReactorProject.adapt(project));
       }

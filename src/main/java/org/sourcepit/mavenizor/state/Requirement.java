@@ -19,49 +19,40 @@ package org.sourcepit.mavenizor.state;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 
-public class Requirement
-{
+public class Requirement {
    private BundleDescription from, to;
    private VersionRange versionRange;
    private boolean optional;
 
-   public BundleDescription getFrom()
-   {
+   public BundleDescription getFrom() {
       return from;
    }
 
-   public void setFrom(BundleDescription from)
-   {
+   public void setFrom(BundleDescription from) {
       this.from = from;
    }
 
-   public BundleDescription getTo()
-   {
+   public BundleDescription getTo() {
       return to;
    }
 
-   public void setTo(BundleDescription to)
-   {
+   public void setTo(BundleDescription to) {
       this.to = to;
    }
 
-   public VersionRange getVersionRange()
-   {
+   public VersionRange getVersionRange() {
       return versionRange;
    }
 
-   public void setVersionRange(VersionRange versionRange)
-   {
+   public void setVersionRange(VersionRange versionRange) {
       this.versionRange = versionRange;
    }
 
-   public boolean isOptional()
-   {
+   public boolean isOptional() {
       return optional;
    }
 
-   public void setOptional(boolean optional)
-   {
+   public void setOptional(boolean optional) {
       this.optional = optional;
    }
 }

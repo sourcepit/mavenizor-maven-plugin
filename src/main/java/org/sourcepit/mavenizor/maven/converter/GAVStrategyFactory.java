@@ -27,25 +27,19 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.sourcepit.common.manifest.osgi.Version;
 
-public interface GAVStrategyFactory
-{
-   interface SnapshotRule
-   {
+public interface GAVStrategyFactory {
+   interface SnapshotRule {
       boolean isSnapshotVersion(BundleDescription bundle, Version version);
    }
 
-   SnapshotRule OSGI_SNAPSHOT_RULE = new SnapshotRule()
-   {
-      public boolean isSnapshotVersion(BundleDescription bundle, Version version)
-      {
+   SnapshotRule OSGI_SNAPSHOT_RULE = new SnapshotRule() {
+      public boolean isSnapshotVersion(BundleDescription bundle, Version version) {
          return "qualifier".equals(version.getQualifier());
       }
    };
 
-   SnapshotRule MAVEN_SNAPSHOT_RULE = new SnapshotRule()
-   {
-      public boolean isSnapshotVersion(BundleDescription bundle, Version version)
-      {
+   SnapshotRule MAVEN_SNAPSHOT_RULE = new SnapshotRule() {
+      public boolean isSnapshotVersion(BundleDescription bundle, Version version) {
          final String qualifier = version.getQualifier();
          return qualifier.length() > 0 && ArtifactUtils.isSnapshot("1-" + qualifier);
       }
@@ -53,8 +47,7 @@ public interface GAVStrategyFactory
 
    SnapshotRule[] DEFAULT_SNAPSHOT_RULES = new SnapshotRule[] { OSGI_SNAPSHOT_RULE, MAVEN_SNAPSHOT_RULE };
 
-   class Request
-   {
+   class Request {
       private String groupIdPrefix;
       private boolean useDefaultSnapshotRules = true;
       private boolean trimQualifiers = false;
@@ -63,48 +56,39 @@ public interface GAVStrategyFactory
 
       private final List<SnapshotRule> additionalSnapshotRules = new ArrayList<SnapshotRule>();
 
-      public String getGroupIdPrefix()
-      {
+      public String getGroupIdPrefix() {
          return groupIdPrefix;
       }
 
-      public void setGroupIdPrefix(String groupIdPrefix)
-      {
+      public void setGroupIdPrefix(String groupIdPrefix) {
          this.groupIdPrefix = groupIdPrefix;
       }
 
-      public boolean isUseDefaultSnapshotRules()
-      {
+      public boolean isUseDefaultSnapshotRules() {
          return useDefaultSnapshotRules;
       }
 
-      public void setUseDefaultSnapshotRules(boolean useDefaultSnapshotRules)
-      {
+      public void setUseDefaultSnapshotRules(boolean useDefaultSnapshotRules) {
          this.useDefaultSnapshotRules = useDefaultSnapshotRules;
       }
 
-      public List<SnapshotRule> getAdditionalSnapshotRules()
-      {
+      public List<SnapshotRule> getAdditionalSnapshotRules() {
          return additionalSnapshotRules;
       }
 
-      public boolean isTrimQualifiers()
-      {
+      public boolean isTrimQualifiers() {
          return trimQualifiers;
       }
 
-      public void setTrimQualifiers(boolean trimQualifiers)
-      {
+      public void setTrimQualifiers(boolean trimQualifiers) {
          this.trimQualifiers = trimQualifiers;
       }
 
-      public Collection<String> getGroup3Prefixes()
-      {
+      public Collection<String> getGroup3Prefixes() {
          return group3Prefixes;
       }
 
-      public Map<String, String> getGroupIdMappings()
-      {
+      public Map<String, String> getGroupIdMappings() {
          return groupIdMappings;
       }
    }

@@ -51,8 +51,7 @@ import org.sourcepit.mavenizor.maven.BundleResolver;
 import com.google.common.base.Optional;
 
 @Named
-public class TychoSourceIUResolver
-{
+public class TychoSourceIUResolver {
    @Inject
    private MavenProjectFacade projectFacade;
 
@@ -63,11 +62,9 @@ public class TychoSourceIUResolver
    private Logger logger;
 
    public void resolveSources(MavenSession session, final TargetPlatform targetPlatform,
-      Collection<String> sourceTargetBundles, BundleResolver.Handler handler)
-   {
+      Collection<String> sourceTargetBundles, BundleResolver.Handler handler) {
       final Set<String> sourceTargets = new HashSet<String>(sourceTargetBundles);
-      if (sourceTargets.isEmpty())
-      {
+      if (sourceTargets.isEmpty()) {
          return;
       }
 
@@ -80,40 +77,32 @@ public class TychoSourceIUResolver
       final P2TargetPlatformDAO tpDAO = new P2TargetPlatformDAO(classLoader);
       final InstallableUnitDAO iuDAO = tpDAO.getInstallableUnitDAO();
 
-      for (final Object unit : tpDAO.getInstallableUnits(targetPlatform))
-      {
-         if (sourceTargets.isEmpty())
-         {
+      for (final Object unit : tpDAO.getInstallableUnits(targetPlatform)) {
+         if (sourceTargets.isEmpty()) {
             return;
          }
 
-         if (hasSourceCapability(iuDAO, unit))
-         {
+         if (hasSourceCapability(iuDAO, unit)) {
             final String symbolicName = iuDAO.getId(unit);
             final String version = iuDAO.getVersion(unit).toString();
 
             final BundleManifest manifest = getManifest(iuDAO, unit);
 
             String[] targetIdAndVersion = getTargetIdAndVersion(manifest);
-            if (targetIdAndVersion == null)
-            {
+            if (targetIdAndVersion == null) {
                targetIdAndVersion = getTargetIdAndVersion(symbolicName, version);
             }
 
-            if (targetIdAndVersion != null)
-            {
+            if (targetIdAndVersion != null) {
                final String targetKey = targetIdAndVersion[0] + "_" + targetIdAndVersion[1];
-               if (sourceTargets.remove(targetKey))
-               {
+               if (sourceTargets.remove(targetKey)) {
                   final P2ResolutionResult result = resolve(targetPlatform, resolver, symbolicName, version);
-                  for (Entry entry : result.getArtifacts())
-                  {
+                  for (Entry entry : result.getArtifacts()) {
                      final Optional<MavenProject> mavenProject = projectFacade.getMavenProject(projectsMap,
                         targetIdAndVersion[0], targetIdAndVersion[1]);
 
                      final File location = projectFacade.getLocation(entry, mavenProject);
-                     if (location != null && location.exists())
-                     {
+                     if (location != null && location.exists()) {
                         handler.resolved(location);
                      }
                   }
@@ -124,68 +113,54 @@ public class TychoSourceIUResolver
    }
 
    private static P2ResolutionResult resolve(final TargetPlatform targetPlatform, final P2Resolver resolver,
-      final String symbolicName, String version)
-   {
+      final String symbolicName, String version) {
       final String strictVersion = "[" + version + "," + version + "]";
       return resolver.resolveInstallableUnit(targetPlatform, symbolicName, strictVersion);
    }
 
-   private P2Resolver createResolver()
-   {
+   private P2Resolver createResolver() {
       final P2ResolverFactory factory = equinox.getService(P2ResolverFactory.class);
       final P2Resolver resolver = factory.createResolver(new MavenLoggerAdapter(logger, false));
       return resolver;
    }
 
-   public static String[] getTargetIdAndVersion(String symbolicName, String version)
-   {
+   public static String[] getTargetIdAndVersion(String symbolicName, String version) {
       String targetId = null;
-      if (symbolicName.endsWith(".source"))
-      {
+      if (symbolicName.endsWith(".source")) {
          targetId = symbolicName.substring(0, symbolicName.length() - ".source".length());
       }
-      if (targetId == null || version == null)
-      {
+      if (targetId == null || version == null) {
          return null;
       }
       return new String[] { targetId, version };
    }
 
-   public static String[] getTargetIdAndVersion(BundleManifest manifest)
-   {
+   public static String[] getTargetIdAndVersion(BundleManifest manifest) {
       String targetId = null;
       String version = null;
 
       final BundleSymbolicName bundleSymbolicName = manifest.getBundleSymbolicName();
       final Version bundleVersion = manifest.getBundleVersion();
-      if (bundleSymbolicName != null && bundleVersion != null)
-      {
+      if (bundleSymbolicName != null && bundleVersion != null) {
          String symbolicName = bundleSymbolicName.getSymbolicName();
          String value = manifest.getHeaderValue("Eclipse-SourceBundle");
-         if (value == null)
-         {
-            if (symbolicName.endsWith(".source"))
-            {
+         if (value == null) {
+            if (symbolicName.endsWith(".source")) {
                targetId = symbolicName.substring(0, symbolicName.length() - ".source".length());
             }
             version = bundleVersion.toFullString();
          }
-         else
-         {
+         else {
             String[] segments = value.split(";");
             targetId = segments[0];
-            for (int i = 1; i < segments.length; i++)
-            {
+            for (int i = 1; i < segments.length; i++) {
                String segment = segments[i];
-               if (segment.startsWith("version="))
-               {
+               if (segment.startsWith("version=")) {
                   segment = segment.substring("version=".length());
-                  if (segment.startsWith("\""))
-                  {
+                  if (segment.startsWith("\"")) {
                      segment = segment.substring(1);
                   }
-                  if (segment.endsWith("\""))
-                  {
+                  if (segment.endsWith("\"")) {
                      segment = segment.substring(0, segment.length() - 1);
                   }
                   version = segment;
@@ -195,31 +170,25 @@ public class TychoSourceIUResolver
          }
       }
 
-      if (targetId == null || version == null)
-      {
+      if (targetId == null || version == null) {
          return null;
       }
       return new String[] { targetId, version };
    }
 
-   private static BundleManifest getManifest(InstallableUnitDAO iuDao, Object unit)
-   {
+   private static BundleManifest getManifest(InstallableUnitDAO iuDao, Object unit) {
       final TouchpointDataDAO tdDAO = iuDao.getTouchpointDataDAO();
       final TouchpointInstructionDAO tiDAO = tdDAO.getTouchpointInstructionDAO();
-      for (Object point : iuDao.getTouchpointData(unit))
-      {
+      for (Object point : iuDao.getTouchpointData(unit)) {
          Object instruction = tdDAO.getInstruction(point, "manifest");
-         if (instruction != null)
-         {
+         if (instruction != null) {
             String manifest = tiDAO.getBody(instruction);
 
             Resource resource = new BundleManifestResourceImpl();
-            try
-            {
+            try {
                resource.load(new ByteArrayInputStream(manifest.getBytes("UTF-8")), null);
             }
-            catch (IOException e)
-            {
+            catch (IOException e) {
                throw pipe(e);
             }
             return (BundleManifest) resource.getContents().get(0);
@@ -228,75 +197,58 @@ public class TychoSourceIUResolver
       return null;
    }
 
-   private static boolean hasSourceCapability(InstallableUnitDAO iuDao, Object unit)
-   {
-      for (Object capabilty : iuDao.getProvidedCapabilities(unit))
-      {
-         if (capabilty.toString().startsWith("org.eclipse.equinox.p2.eclipse.type/source/"))
-         {
+   private static boolean hasSourceCapability(InstallableUnitDAO iuDao, Object unit) {
+      for (Object capabilty : iuDao.getProvidedCapabilities(unit)) {
+         if (capabilty.toString().startsWith("org.eclipse.equinox.p2.eclipse.type/source/")) {
             return true;
          }
       }
       return false;
    }
 
-   private abstract static class AbstractDAO
-   {
+   private abstract static class AbstractDAO {
       private final String className;
 
       protected final ClassLoader classLoader;
 
       private Class<?> clazz;
 
-      protected AbstractDAO(ClassLoader classLoader, String className)
-      {
+      protected AbstractDAO(ClassLoader classLoader, String className) {
          this.classLoader = classLoader;
          this.className = className;
       }
 
-      protected Class<?> getClazz()
-      {
-         if (clazz == null)
-         {
-            try
-            {
+      protected Class<?> getClazz() {
+         if (clazz == null) {
+            try {
                clazz = classLoader.loadClass(className);
             }
-            catch (ClassNotFoundException e)
-            {
+            catch (ClassNotFoundException e) {
                throw new IllegalStateException(e);
             }
          }
          return clazz;
       }
 
-      protected Method getMethod(String methodName, Class<?>... argTypes)
-      {
+      protected Method getMethod(String methodName, Class<?>... argTypes) {
          return getMethod(getClazz(), methodName, argTypes);
       }
 
-      private static Method getMethod(Class<?> clazz, String methodName, Class<?>... argTypes)
-      {
-         try
-         {
+      private static Method getMethod(Class<?> clazz, String methodName, Class<?>... argTypes) {
+         try {
             return clazz.getDeclaredMethod(methodName, argTypes);
          }
-         catch (NoSuchMethodException e)
-         {
-            for (Class<?> interfaze : clazz.getInterfaces())
-            {
+         catch (NoSuchMethodException e) {
+            for (Class<?> interfaze : clazz.getInterfaces()) {
                final Method method = getMethod(interfaze, methodName, argTypes);
-               if (method != null)
-               {
+               if (method != null) {
                   return method;
                }
             }
             final Class<?> superclass = clazz.getSuperclass();
-            if (superclass != null)
-            {
+            if (superclass != null) {
                final Method method = getMethod(superclass, methodName, argTypes);
-               if (method != null)
-               {
+               if (method != null) {
                   return method;
                }
             }
@@ -305,29 +257,22 @@ public class TychoSourceIUResolver
       }
 
       @SuppressWarnings("unchecked")
-      protected static <T> T invoke(Method method, Object target, Object... args)
-      {
-         try
-         {
+      protected static <T> T invoke(Method method, Object target, Object... args) {
+         try {
             return (T) method.invoke(target, args);
          }
-         catch (IllegalAccessException e)
-         {
+         catch (IllegalAccessException e) {
             throw pipe(e);
          }
-         catch (InvocationTargetException e)
-         {
+         catch (InvocationTargetException e) {
             final Throwable t = e.getTargetException();
-            if (t instanceof RuntimeException)
-            {
+            if (t instanceof RuntimeException) {
                throw (RuntimeException) t;
             }
-            if (t instanceof Error)
-            {
+            if (t instanceof Error) {
                throw (Error) t;
             }
-            if (t instanceof Exception)
-            {
+            if (t instanceof Exception) {
                throw pipe((Exception) t);
             }
             throw new IllegalStateException(t);
@@ -335,38 +280,31 @@ public class TychoSourceIUResolver
       }
    }
 
-   private static class P2TargetPlatformDAO extends AbstractDAO
-   {
+   private static class P2TargetPlatformDAO extends AbstractDAO {
       private InstallableUnitDAO iuDAO;
 
       private Method getInstallableUnits;
 
-      public P2TargetPlatformDAO(ClassLoader classLoader)
-      {
+      public P2TargetPlatformDAO(ClassLoader classLoader) {
          super(classLoader, "org.eclipse.tycho.p2.target.P2TargetPlatform");
       }
 
-      public InstallableUnitDAO getInstallableUnitDAO()
-      {
-         if (iuDAO == null)
-         {
+      public InstallableUnitDAO getInstallableUnitDAO() {
+         if (iuDAO == null) {
             iuDAO = new InstallableUnitDAO(classLoader);
          }
          return iuDAO;
       }
 
-      public Collection<?> getInstallableUnits(Object targetPlatform)
-      {
-         if (getInstallableUnits == null)
-         {
+      public Collection<?> getInstallableUnits(Object targetPlatform) {
+         if (getInstallableUnits == null) {
             getInstallableUnits = getMethod("getInstallableUnits");
          }
          return invoke(getInstallableUnits, targetPlatform);
       }
    }
 
-   private static class InstallableUnitDAO extends AbstractDAO
-   {
+   private static class InstallableUnitDAO extends AbstractDAO {
       private TouchpointDataDAO tdDAO;
 
       private Method getId;
@@ -374,99 +312,78 @@ public class TychoSourceIUResolver
       private Method getProvidedCapabilities;
       private Method getTouchpointData;
 
-      public InstallableUnitDAO(ClassLoader classLoader)
-      {
+      public InstallableUnitDAO(ClassLoader classLoader) {
          super(classLoader, "org.eclipse.equinox.p2.metadata.IInstallableUnit");
       }
 
-      public TouchpointDataDAO getTouchpointDataDAO()
-      {
-         if (tdDAO == null)
-         {
+      public TouchpointDataDAO getTouchpointDataDAO() {
+         if (tdDAO == null) {
             tdDAO = new TouchpointDataDAO(classLoader);
          }
          return tdDAO;
       }
 
-      public String getId(Object unit)
-      {
-         if (getId == null)
-         {
+      public String getId(Object unit) {
+         if (getId == null) {
             getId = getMethod("getId");
          }
          return invoke(getId, unit);
       }
 
-      public Object getVersion(Object unit)
-      {
-         if (getVersion == null)
-         {
+      public Object getVersion(Object unit) {
+         if (getVersion == null) {
             getVersion = getMethod("getVersion");
          }
          return invoke(getVersion, unit);
       }
 
-      public Collection<?> getProvidedCapabilities(Object installableUnit)
-      {
-         if (getProvidedCapabilities == null)
-         {
+      public Collection<?> getProvidedCapabilities(Object installableUnit) {
+         if (getProvidedCapabilities == null) {
             getProvidedCapabilities = getMethod("getProvidedCapabilities");
          }
          return invoke(getProvidedCapabilities, installableUnit);
       }
 
-      public Collection<?> getTouchpointData(Object unit)
-      {
-         if (getTouchpointData == null)
-         {
+      public Collection<?> getTouchpointData(Object unit) {
+         if (getTouchpointData == null) {
             getTouchpointData = getMethod("getTouchpointData");
          }
          return invoke(getTouchpointData, unit);
       }
    }
 
-   private static class TouchpointDataDAO extends AbstractDAO
-   {
+   private static class TouchpointDataDAO extends AbstractDAO {
       private TouchpointInstructionDAO tiDAO;
       private Method getInstruction;
 
-      protected TouchpointDataDAO(ClassLoader classLoader)
-      {
+      protected TouchpointDataDAO(ClassLoader classLoader) {
          super(classLoader, "org.eclipse.equinox.p2.metadata.ITouchpointData");
       }
 
-      public TouchpointInstructionDAO getTouchpointInstructionDAO()
-      {
-         if (tiDAO == null)
-         {
+      public TouchpointInstructionDAO getTouchpointInstructionDAO() {
+         if (tiDAO == null) {
             tiDAO = new TouchpointInstructionDAO(classLoader);
          }
          return tiDAO;
       }
 
-      public Object getInstruction(Object touchpointData, String key)
-      {
-         if (getInstruction == null)
-         {
+      public Object getInstruction(Object touchpointData, String key) {
+         if (getInstruction == null) {
             getInstruction = getMethod("getInstruction", String.class);
          }
          return invoke(getInstruction, touchpointData, key);
       }
    }
 
-   private static class TouchpointInstructionDAO extends AbstractDAO
-   {
+   private static class TouchpointInstructionDAO extends AbstractDAO {
       private Method getBody;
 
-      protected TouchpointInstructionDAO(ClassLoader classLoader)
-      {
+      protected TouchpointInstructionDAO(ClassLoader classLoader) {
          super(classLoader, "org.eclipse.equinox.p2.metadata.ITouchpointInstruction");
       }
 
-      public String getBody(Object instruction)
-      {
-         if (getBody == null)
-         {
+      public String getBody(Object instruction) {
+         if (getBody == null) {
             getBody = getMethod("getBody");
          }
          return invoke(getBody, instruction);

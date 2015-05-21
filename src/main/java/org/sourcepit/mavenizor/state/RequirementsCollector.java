@@ -21,7 +21,6 @@ import java.util.Collection;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 
 
-public interface RequirementsCollector
-{
+public interface RequirementsCollector {
    Collection<Requirement> collectRequirements(BundleDescription bundle);
 }
