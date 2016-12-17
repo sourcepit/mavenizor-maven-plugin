@@ -42,13 +42,13 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.manifest.osgi.ClassPathEntry;
 import org.sourcepit.common.maven.model.MavenArtifact;
@@ -70,12 +70,8 @@ import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 
 @Named
 public class DefaultBundleConverter implements BundleConverter {
-   private final Logger log;
-
-   @Inject
-   public DefaultBundleConverter(Logger log) {
-      this.log = log;
-   }
+   
+   private static final Logger LOG = LoggerFactory.getLogger(DefaultBundleConverter.class);
 
    private ConvertedArtifact newConvertedArtifact(MavenArtifact mavenArtifact, ConvertionDirective directive,
       boolean embeddedLibrary) {
@@ -103,7 +99,7 @@ public class DefaultBundleConverter implements BundleConverter {
 
    private Result caseOmit(Request request) {
       final BundleDescription bundle = request.getBundle();
-      log.info(bundle + " (omitted)");
+      LOG.info(bundle + " (omitted)");
 
       final Result result = new Result(bundle, OMIT);
       final List<Path> libEntries = getEmbeddedLibEntries(bundle);
@@ -126,12 +122,12 @@ public class DefaultBundleConverter implements BundleConverter {
 
       Result result;
       if (autoOmit) {
-         log.info(bundle + " (auto omitted)");
+         LOG.info(bundle + " (auto omitted)");
          result = new Result(bundle, OMIT);
       }
       else {
          final MavenArtifact mainArtifact = toMainMavenArtifact(bundle, request.getGAVStrategy());
-         log.info(bundle + " -> " + toArtifactKey(mainArtifact) + " (mavenized)");
+         LOG.info(bundle + " -> " + toArtifactKey(mainArtifact) + " (mavenized)");
          result = new Result(bundle, MAVENIZE);
          result.getConvertedArtifacts().add(newConvertedArtifact(mainArtifact, MAVENIZE, false));
       }
@@ -145,7 +141,7 @@ public class DefaultBundleConverter implements BundleConverter {
       final BundleDescription bundle = request.getBundle();
       final MavenArtifact artifact = detectMavenArtifactFromBundle(bundle);
       if (artifact != null) {
-         log.info(bundle + " -> " + toArtifactKey(artifact) + " (detected)");
+         LOG.info(bundle + " -> " + toArtifactKey(artifact) + " (detected)");
          final Result result = new Result(bundle, AUTO_DETECT);
          result.getConvertedArtifacts().add(newConvertedArtifact(artifact, AUTO_DETECT, false));
          return result;
@@ -154,12 +150,12 @@ public class DefaultBundleConverter implements BundleConverter {
    }
 
    private Result caseIgnore(final BundleDescription bundle) {
-      log.info(bundle + " (ignored)");
+      LOG.info(bundle + " (ignored)");
       return new Result(bundle, IGNORE);
    }
 
    private Result caseReplace(final BundleDescription bundle, MavenArtifact replacement) {
-      log.info(bundle + " -> " + toArtifactKey(replacement) + " (mapped)");
+      LOG.info(bundle + " -> " + toArtifactKey(replacement) + " (mapped)");
       final Result result = new Result(bundle, REPLACE);
       result.getConvertedArtifacts().add(newConvertedArtifact(replacement, REPLACE, false));
       return result;
@@ -179,7 +175,7 @@ public class DefaultBundleConverter implements BundleConverter {
       final TargetType targetType = request.getTargetType();
       switch (targetType) {
          case OSGI :
-            log.info("Detected embedded libraries in " + getBundleLocation(request.getBundle()));
+            LOG.info("Detected embedded libraries in " + getBundleLocation(request.getBundle()));
             break;
          case JAVA :
             for (Path libEntry : libEntries) {
@@ -198,7 +194,7 @@ public class DefaultBundleConverter implements BundleConverter {
       switch (directive) {
          case OMIT :
          case IGNORE :
-            log.info(bundle + "/" + libEntry + " (ignored)");
+            LOG.info(bundle + "/" + libEntry + " (ignored)");
             break;
          case AUTO_DETECT :
          case MAVENIZE :
@@ -207,7 +203,7 @@ public class DefaultBundleConverter implements BundleConverter {
             break;
          case REPLACE :
             final MavenArtifact replacement = libAction.getReplacement();
-            log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(replacement) + " (mapped)");
+            LOG.info(bundle + "/" + libEntry + " -> " + toArtifactKey(replacement) + " (mapped)");
             result.getConvertedArtifacts().add(newConvertedArtifact(replacement, directive, true));
             break;
          default :
@@ -230,7 +226,7 @@ public class DefaultBundleConverter implements BundleConverter {
                result.getUnhandledEmbeddedLibraries().add(libEntry);
             }
             else {
-               log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (detected)");
+               LOG.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (detected)");
                result.getConvertedArtifacts().add(newConvertedArtifact(artifact, AUTO_DETECT, true));
             }
          }
@@ -243,7 +239,7 @@ public class DefaultBundleConverter implements BundleConverter {
             artifact.setVersion(gav.deriveMavenVersion(bundle));
             artifact.setFile(libFile);
 
-            log.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (mavenized)");
+            LOG.info(bundle + "/" + libEntry + " -> " + toArtifactKey(artifact) + " (mavenized)");
             result.getConvertedArtifacts().add(newConvertedArtifact(artifact, MAVENIZE, true));
          }
       }
@@ -559,7 +555,8 @@ public class DefaultBundleConverter implements BundleConverter {
       return libAction;
    }
 
-   private String determineEmbeddedLibraryActionProperty(BundleDescription bundle, Path libEntry, PropertiesMap options) {
+   private String determineEmbeddedLibraryActionProperty(BundleDescription bundle, Path libEntry,
+      PropertiesMap options) {
       String libActionProperty = options.get(bundle.getSymbolicName() + "_" + bundle.getVersion() + "/" + libEntry);
       if (libActionProperty == null) {
          libActionProperty = options.get(bundle.getSymbolicName() + "/" + libEntry);

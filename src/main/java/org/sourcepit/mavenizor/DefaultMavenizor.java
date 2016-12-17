@@ -39,6 +39,7 @@ import org.apache.maven.model.Model;
 import org.eclipse.osgi.service.resolver.BundleDescription;
 import org.eclipse.osgi.service.resolver.State;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.manifest.osgi.VersionRange;
 import org.sourcepit.common.maven.model.MavenArtifact;
@@ -57,8 +58,8 @@ import org.sourcepit.mavenizor.state.RequirementsCollector;
 
 @Named
 public class DefaultMavenizor implements Mavenizor {
-   @Inject
-   private Logger log;
+   
+   private static final Logger LOG = LoggerFactory.getLogger(DefaultMavenizor.class);
 
    @Inject
    private RequirementsCollector requirementsCollector;
@@ -116,11 +117,11 @@ public class DefaultMavenizor implements Mavenizor {
          Mavenizor.Result.addConverterResult(result, converterResult);
 
          for (Path libEntry : converterResult.getMissingEmbeddedLibraries()) {
-            log.warn("Library " + libEntry + " not found in " + BundleAdapterFactory.DEFAULT.adapt(bundle, File.class));
+            LOG.warn("Library " + libEntry + " not found in " + BundleAdapterFactory.DEFAULT.adapt(bundle, File.class));
          }
 
          for (Path libEntry : converterResult.getUnhandledEmbeddedLibraries()) {
-            log.warn("Unknown embedded library. Introduce it via property '" + bundle.getSymbolicName() + "[_"
+            LOG.warn("Unknown embedded library. Introduce it via property '" + bundle.getSymbolicName() + "[_"
                + bundle.getVersion() + "]/" + libEntry
                + " = mavenize | ignore | auto_detect | <groupId>:<artifactId>:<type>[:<classifier>]:<version>'");
          }
@@ -229,7 +230,7 @@ public class DefaultMavenizor implements Mavenizor {
       final Collection<Requirement> requirements = requirementsCollector.collectRequirements(bundle);
       for (Requirement requirement : requirements) {
          if (optionsHelper.isMatch(requirement, options, "@requirements.erase", false)) {
-            log.info("Omitting requirement from " + requirement.getFrom() + " to " + requirement.getTo());
+            LOG.info("Omitting requirement from " + requirement.getFrom() + " to " + requirement.getTo());
             continue;
          }
 
@@ -376,7 +377,7 @@ public class DefaultMavenizor implements Mavenizor {
             for (ArtifactBundle artifactBundle : artifactBundles) {
                if (hasMavenizedArtifact(artifactBundle)) {
                   final Model pom = artifactBundle.getPom();
-                  log.info("Attaching source " + sourceJar + " to " + pom);
+                  LOG.info("Attaching source " + sourceJar + " to " + pom);
 
                   final MavenArtifact sourceArtifact = MavenModelFactory.eINSTANCE.createMavenArtifact();
                   sourceArtifact.setGroupId(pom.getGroupId());
