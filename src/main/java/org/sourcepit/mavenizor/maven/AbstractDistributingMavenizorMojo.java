@@ -52,6 +52,9 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
    @Parameter(property = "forceOverwrite", defaultValue = "false")
    protected boolean forceOverwrite;
 
+   @Parameter(property = "forceOverwriteProjectBundles", defaultValue = "true")
+   protected boolean forceOverwriteProjectBundles;
+
    @Override
    protected void processResult(Result result) {
       final DistributionHandler handler = getDistributionHandler();
@@ -67,7 +70,7 @@ public abstract class AbstractDistributingMavenizorMojo extends AbstractMavenizo
       }
       logger.info("Distributing project bundles...");
       for (ArtifactBundle artifactBundle : scopeProject) {
-         distributor.distribute(workingDir, artifactBundle, handler, true);
+         distributor.distribute(workingDir, artifactBundle, handler, forceOverwriteProjectBundles);
       }
       logger.info("Distributing target platform bundles...");
       for (ArtifactBundle artifactBundle : scopeDependency) {
