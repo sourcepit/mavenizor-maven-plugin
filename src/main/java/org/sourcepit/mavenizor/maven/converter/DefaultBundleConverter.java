@@ -70,7 +70,7 @@ import org.sourcepit.mavenizor.state.BundleAdapterFactory;
 
 @Named
 public class DefaultBundleConverter implements BundleConverter {
-   
+
    private static final Logger LOG = LoggerFactory.getLogger(DefaultBundleConverter.class);
 
    private ConvertedArtifact newConvertedArtifact(MavenArtifact mavenArtifact, ConvertionDirective directive,
@@ -115,8 +115,8 @@ public class DefaultBundleConverter implements BundleConverter {
 
       final List<Path> libEntries = getEmbeddedLibEntries(bundle);
 
-      final boolean hasEmbeddedArtifacts = libEntries.size() > 0;
       final boolean hasDotOnCP = libEntries.remove(new Path("."));
+      final boolean hasEmbeddedArtifacts = libEntries.size() > 0;
 
       final boolean autoOmit = request.getTargetType() == TargetType.JAVA && hasEmbeddedArtifacts && !hasDotOnCP;
 
