@@ -50,6 +50,7 @@ import org.eclipse.tycho.core.osgitools.EclipseFeatureProject;
 import org.eclipse.tycho.core.shared.TargetEnvironment;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sourcepit.common.manifest.osgi.BundleManifest;
 import org.sourcepit.common.utils.lang.Exceptions;
 import org.sourcepit.common.utils.lang.PipedException;
@@ -80,8 +81,7 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo {
       }
    }
 
-   @Inject
-   protected Logger logger;
+   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
    @Parameter(property = "session")
    protected MavenSession session;
@@ -139,7 +139,7 @@ public abstract class AbstractMavenizorMojo extends AbstractMojo {
 
    @Inject
    private Map<String, TychoProject> projectTypes;
-
+   
    public final void execute() throws MojoExecutionException, MojoFailureException {
       try {
          doExecute();
